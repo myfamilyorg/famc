@@ -6,4 +6,8 @@ if [ -z "$SCRIPT_PATH" ]; then
 fi
 FAMC_BASE=$(dirname "$(dirname "$SCRIPT_PATH")")
 
-${FAMC_BASE}/bin/mrustc -L${FAMC_BASE}/output-1.29.0 "$@"
+if [ "$1" == "--output" ]; then
+	echo "${FAMC_BASE}/output-1.29.0"
+else
+	${FAMC_BASE}/bin/mrustc -L${FAMC_BASE}/output-1.29.0 "$@"
+fi
