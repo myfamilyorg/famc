@@ -1,0 +1,9 @@
+#!/bin/bash
+
+SCRIPT_PATH=$(readlink -f "$0" 2>/dev/null || realpath "$0" 2>/dev/null)
+if [ -z "$SCRIPT_PATH" ]; then
+    SCRIPT_PATH=$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")
+fi
+FAMC_BASE=$(dirname "$(dirname "$SCRIPT_PATH")")
+
+${FAMC_BASE}/bin/mrustc -L${FAMC_BASE}/output-1.29.0 "$@"
