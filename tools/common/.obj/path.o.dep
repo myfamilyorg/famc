@@ -1,5 +1,0 @@
-.obj/path.o: path.cpp path.h helpers.h
-
-path.h:
-
-helpers.h:

@@ -1,3 +1,0 @@
-.obj/jobserver.o: jobserver.cpp jobserver.h
-
-jobserver.h:
