@@ -1,0 +1,25 @@
+.obj/build.o: build.cpp manifest.h ../common/path.h ../common/helpers.h \
+  cfg.hpp stringlist.h build.h ../common/debug.h jobs.hpp os.hpp \
+  file_timestamp.h ../common/target_detect.h
+
+manifest.h:
+
+../common/path.h:
+
+../common/helpers.h:
+
+cfg.hpp:
+
+stringlist.h:
+
+build.h:
+
+../common/debug.h:
+
+jobs.hpp:
+
+os.hpp:
+
+file_timestamp.h:
+
+../common/target_detect.h:

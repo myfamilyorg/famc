@@ -1,0 +1,8 @@
+.obj/file_timestamp.o: file_timestamp.cpp file_timestamp.h \
+  ../common/path.h ../common/helpers.h
+
+file_timestamp.h:
+
+../common/path.h:
+
+../common/helpers.h:

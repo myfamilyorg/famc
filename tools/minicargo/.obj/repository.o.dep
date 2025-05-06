@@ -1,0 +1,14 @@
+.obj/repository.o: repository.cpp repository.h ../common/helpers.h \
+  manifest.h ../common/path.h ../common/debug.h ../common/toml.h
+
+repository.h:
+
+../common/helpers.h:
+
+manifest.h:
+
+../common/path.h:
+
+../common/debug.h:
+
+../common/toml.h:

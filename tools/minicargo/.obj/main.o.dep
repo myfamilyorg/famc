@@ -1,0 +1,21 @@
+.obj/main.o: main.cpp ../common/debug.h manifest.h ../common/path.h \
+  ../common/helpers.h repository.h build.h ../common/toml.h cfg.hpp \
+  stringlist.h
+
+../common/debug.h:
+
+manifest.h:
+
+../common/path.h:
+
+../common/helpers.h:
+
+repository.h:
+
+build.h:
+
+../common/toml.h:
+
+cfg.hpp:
+
+stringlist.h:

@@ -1,0 +1,16 @@
+.obj/jobs.o: jobs.cpp jobs.hpp stringlist.h ../common/path.h \
+  ../common/helpers.h os.hpp ../common/debug.h ../common/jobserver.h
+
+jobs.hpp:
+
+stringlist.h:
+
+../common/path.h:
+
+../common/helpers.h:
+
+os.hpp:
+
+../common/debug.h:
+
+../common/jobserver.h:
