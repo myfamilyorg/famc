@@ -1,0 +1,4 @@
+[crate]
+	bin = "famc"
+[deps]
+	exec = { git = "https://github.com/myfamilyorg/exec" }
