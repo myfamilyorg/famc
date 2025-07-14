@@ -1,0 +1,45 @@
+1.) Trait based.
+
+// Deine a trait:
+@Animal {
+	// self inferred
+	@speak();
+	// with deault impl
+	@speak_n_times(n: u32) {
+                for(i: u32; i<n; i++) {
+                        self.speak();
+                }
+        }
+	// mutable self object
+	@mut set_age(n: u8);
+}
+
+2.) Define structs:
+// struct (by inference)
+Cat {
+        age: u8;
+        lives_used: u8;
+}
+
+// struct (by inference)
+Dog {
+        age: u8;
+}
+
+// struct (by inference)
+Bird {
+        age: u8;
+}
+
+3.) Implement traits:
+
+// implement Speak trait for Cat
+@Animal::Cat {
+        // implement required function, parameters are infered from above
+        speak {
+                println!("meow!");
+        }
+}
+
+
+
