@@ -12,18 +12,62 @@ STATIC void lexer_incr_offset(Lexer* lex) {
 }
 
 STATIC i32 lexer_skip_white_space(Lexer* lex) {
+	i32 ret;
+	u8 c;
+	u8 next_c;
+	ret = 0;
+	if (!lex) {
+		err = EINVAL;
+		return -1;
+	}
 	while (lex->offset < lex->len) {
-		if (lex->text[lex->offset] != ' ' &&
-		    lex->text[lex->offset] != '\t' &&
-		    lex->text[lex->offset] != '\f' &&
-		    lex->text[lex->offset] != '\v' &&
-		    lex->text[lex->offset] != '\r' &&
-		    lex->text[lex->offset] != '\n')
+		c = lex->text[lex->offset];
+		if (c != ' ' && c != '\t' && c != '\f' && c != '\v' &&
+		    c != '\r' && c != '\n') {
+			if (c == '/' && lex->offset + 1 < lex->len) {
+				next_c = lex->text[lex->offset + 1];
+				if (next_c == '/') {
+					lex->offset += 2;
+					lex->col_num += 2;
+					while (lex->offset < lex->len &&
+					       lex->text[lex->offset] != '\n') {
+						lex->offset++;
+						lex->col_num++;
+					}
+					continue;
+				} else if (next_c == '*') {
+					lex->offset += 2;
+					lex->col_num += 2;
+					while (lex->offset + 1 < lex->len) {
+						if (lex->text[lex->offset] ==
+							'*' &&
+						    lex->text[lex->offset +
+							      1] == '/') {
+							lex->offset += 2;
+							lex->col_num += 2;
+							break;
+						}
+						if (lex->text[lex->offset] ==
+						    '\n') {
+							lex->line_num++;
+							lex->col_num = 1;
+						} else {
+							lex->col_num++;
+						}
+						lex->offset++;
+					}
+					if (lex->offset + 1 >= lex->len) {
+						err = EINVAL;
+						return -1;
+					}
+					continue;
+				}
+			}
 			break;
-
+		}
 		lexer_incr_offset(lex);
 	}
-	return 0;
+	return ret;
 }
 
 STATIC i32 lexer_proc_string_lit(Lexer* lex) {
