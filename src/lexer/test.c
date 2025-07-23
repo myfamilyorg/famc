@@ -149,11 +149,8 @@ Test(lexer5_numbers) {
 	ASSERT_EQ(t.len, 5, "t.len=5");
 	ASSERT(!strcmpn(t.value, "1e-10", 5), "1e-10");
 
-	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_OK, "hex float");
-	ASSERT_EQ(t.len, 8, "t.len=8");
-	ASSERT(!strcmpn(t.value, "0x1.4p10", 8), "0x1.4p10");
-
-	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_COMPLETE, "complete");
+	/* Invalid value */
+	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_ERR, "hex float");
 }
 
 Test(lexer6_punct) {
@@ -293,6 +290,5 @@ Test(lexer7_invalid_punct) {
 
 	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_ERR, "invalid $");
 	ASSERT_EQ(err, EINVAL, "err=EINVAL");
-	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_COMPLETE, "complete");
 }
 

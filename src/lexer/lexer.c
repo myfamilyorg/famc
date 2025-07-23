@@ -206,6 +206,16 @@ STATIC i32 lexer_proc_number_lit(Lexer* lex) {
 		}
 		lexer_incr_offset(lex);
 	}
+	/* Check for invalid suffix (e.g., letter after number) */
+	if (lex->offset < lex->len) {
+		next_c = lex->text[lex->offset];
+		if ((next_c >= 'a' && next_c <= 'z') ||
+		    (next_c >= 'A' && next_c <= 'Z') ||
+		    (next_c >= '0' && next_c <= '9') || next_c == '_') {
+			err = EINVAL;
+			return TOKEN_ERR;
+		}
+	}
 	return TOKEN_OK;
 }
 
