@@ -1,5 +1,5 @@
-#include <error.H>
 #include <lexer.H>
+#include <libfam/error.H>
 
 STATIC i32 lexer_skip_white_space(Lexer* lex) {
 	while (lex->offset < lex->len) {
@@ -40,6 +40,9 @@ i32 lexer_next_token(Lexer* lex, Token* next) {
 	start = lex->offset;
 	lexer_skip_white_space(lex);
 	if (lex->offset >= lex->len) return TOKEN_COMPLETE;
+
+	if (start) {
+	}
 
 	return TOKEN_COMPLETE;
 }
