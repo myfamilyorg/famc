@@ -18,7 +18,6 @@ STATIC i32 lexer_skip_white_space(Lexer* lex) {
 	u8 next_c;
 	ret = 0;
 	if (!lex) {
-		err = EINVAL;
 		return -1;
 	}
 	while (lex->offset < lex->len) {
@@ -58,7 +57,7 @@ STATIC i32 lexer_skip_white_space(Lexer* lex) {
 						lex->offset++;
 					}
 					if (lex->offset + 1 >= lex->len) {
-						err = EINVAL;
+						lex->err = EINVAL;
 						return -1;
 					}
 					continue;
@@ -83,7 +82,7 @@ STATIC i32 lexer_proc_string_lit(Lexer* lex) {
 		if (c == '\\') {
 			lexer_incr_offset(lex); /* Skip \ */
 			if (lex->offset >= lex->len) {
-				err = EINVAL;
+				lex->err = EINVAL;
 				return TOKEN_ERR;
 			}
 			/* Skip escaped char (e.g., \n, \") */
@@ -94,7 +93,7 @@ STATIC i32 lexer_proc_string_lit(Lexer* lex) {
 		lexer_incr_offset(lex);
 	}
 
-	err = EINVAL;
+	lex->err = EINVAL;
 	return TOKEN_ERR;
 }
 
@@ -102,14 +101,14 @@ STATIC i32 lexer_proc_char_lit(Lexer* lex) {
 	u8 c;
 	lexer_incr_offset(lex); /* Skip opening ' */
 	if (lex->offset >= lex->len) {
-		err = EINVAL;
+		lex->err = EINVAL;
 		return TOKEN_ERR;
 	}
 	c = lex->text[lex->offset];
 	if (c == '\\') {
 		lexer_incr_offset(lex); /* Skip \ */
 		if (lex->offset >= lex->len) {
-			err = EINVAL;
+			lex->err = EINVAL;
 			return TOKEN_ERR;
 		}
 		/* Skip escaped char (e.g., \n, \xFF) */
@@ -118,7 +117,7 @@ STATIC i32 lexer_proc_char_lit(Lexer* lex) {
 		lexer_incr_offset(lex); /* Skip regular char */
 	}
 	if (lex->offset >= lex->len || lex->text[lex->offset] != '\'') {
-		err = EINVAL;
+		lex->err = EINVAL;
 		return TOKEN_ERR;
 	}
 	lexer_incr_offset(lex); /* Skip closing ' */
@@ -215,7 +214,7 @@ STATIC i32 lexer_proc_number_lit(Lexer* lex) {
 		if ((next_c >= 'a' && next_c <= 'z') ||
 		    (next_c >= 'A' && next_c <= 'Z') ||
 		    (next_c >= '0' && next_c <= '9') || next_c == '_') {
-			err = EINVAL;
+			lex->err = EINVAL;
 			return TOKEN_ERR;
 		}
 	}
@@ -288,13 +287,12 @@ STATIC i32 lexer_proc_punct(Lexer* lex) {
 		return TOKEN_OK;
 	}
 	/* Invalid punctuation/char */
-	err = EINVAL;
+	lex->err = EINVAL;
 	return TOKEN_ERR;
 }
 
 i32 lexer_init(Lexer* lex, const u8* text, u64 len) {
 	if (!lex || !text) {
-		err = EINVAL;
 		return -1;
 	}
 
@@ -303,6 +301,7 @@ i32 lexer_init(Lexer* lex, const u8* text, u64 len) {
 	lex->offset = 0;
 	lex->line_num = 1;
 	lex->col_num = 0;
+	lex->err = SUCCESS;
 
 	return 0;
 }
@@ -312,7 +311,6 @@ i32 lexer_next_token(Lexer* lex, Token* next) {
 	i32 ret;
 	u8 next_char;
 	if (!lex || !next) {
-		err = EINVAL;
 		return TOKEN_ERR;
 	}
 

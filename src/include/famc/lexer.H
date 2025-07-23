@@ -6,6 +6,7 @@ typedef struct {
 	u64 offset;
 	u64 line_num;
 	u64 col_num;
+	i32 err;
 } Lexer;
 
 typedef struct {
