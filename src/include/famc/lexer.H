@@ -4,12 +4,15 @@ typedef struct {
 	const u8* text;
 	u64 len;
 	u64 offset;
+	u64 line_num;
+	u64 col_num;
 } Lexer;
 
 typedef struct {
-	i32 ttype;
-	u8* value;
+	const u8* value;
 	u64 len;
+	u64 line_num;
+	u64 col_num;
 } Token;
 
 #define TOKEN_COMPLETE 0

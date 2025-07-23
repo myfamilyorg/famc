@@ -20,11 +20,12 @@ INSTALL_BIN = $(INSTALL) -m 755
 INSTALL_DATA = $(INSTALL) -m 644
 INSTALL_DIR = $(INSTALL) -d
 
-# Source and object files
+# Source and object files (exclude main.c from tests to avoid _start/main conflicts)
 C_SOURCES = $(foreach dir,$(SRC_DIRS), \
-	    $(filter-out $(SRCDIR)/$(dir)/test.c, \
-	    $(wildcard $(SRCDIR)/$(dir)/*.c)))
-OBJECTS = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(C_SOURCES))
+		$(filter-out $(SRCDIR)/$(dir)/test.c $(SRCDIR)/main/main.c, \
+		$(wildcard $(SRCDIR)/$(dir)/*.c)))
+OBJECTS = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(C_SOURCES)) \
+	  $(OBJDIR)/main/main.o  # Include main.c for main binary
 TEST_OBJECTS = $(patsubst $(SRCDIR)/%.c,$(TEST_OBJDIR)/%.o,$(C_SOURCES))
 
 # Test sources and objects
@@ -42,14 +43,14 @@ FILTER ?= "*"
 
 # Common flags
 COMMON_FLAGS = -Wall \
-               -Wextra \
-               -std=c89 \
-               -Werror \
-               -I$(INCLDIR) \
-               -DMEMSAN=$(MEMSAN) \
-               -fno-builtin \
-	       -Wno-pointer-sign \
-               -Wno-incompatible-library-redeclaration
+			   -Wextra \
+			   -std=c89 \
+			   -Werror \
+			   -I$(INCLDIR) \
+			   -DMEMSAN=$(MEMSAN) \
+			   -fno-builtin \
+		   -Wno-pointer-sign \
+			   -Wno-incompatible-library-redeclaration
 
 # Arch-specific flags
 ARCH_FLAGS_x86_64 = -msse4.2
@@ -58,9 +59,9 @@ ARCH_FLAGS_aarch64 = -march=armv8-a+crc
 # Detect architecture (default to x86_64)
 ARCH = $(shell uname -m)
 ifeq ($(ARCH),x86_64)
-    ARCH_FLAGS = $(ARCH_FLAGS_x86_64)
+	ARCH_FLAGS = $(ARCH_FLAGS_x86_64)
 else
-    ARCH_FLAGS = $(ARCH_FLAGS_aarch64)
+	ARCH_FLAGS = $(ARCH_FLAGS_aarch64)
 endif
 
 # Specific flags
@@ -85,14 +86,19 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 $(BINARY): $(OBJECTS) | $(BINDIR)
 	$(CC) $(BIN_CFLAGS) $(LDFLAGS) -o $@ $^ -lfam
 
+# Rules for test objects from main sources (using TEST_CFLAGS)
+$(TEST_OBJDIR)/%.o: $(SRCDIR)/%.c | $(TEST_OBJDIR)
+	@mkdir -p $(@D)
+	$(CC) $(TEST_CFLAGS) -c $< -o $@
+
 # Rules for test objects
 $(TOBJDIR)/%.o: $(SRCDIR)/%.c | $(TOBJDIR)
 	@mkdir -p $(@D)
 	$(CC) $(TEST_BINARY_CFLAGS) -c $< -o $@
 
-# Build test binary
-$(TEST_BIN): $(TEST_OBJ) | $(BINDIR)
-	$(CC) $(TEST_BINARY_CFLAGS) $(LDFLAGS) $(SRCDIR)/test/main.c -o $@ $^ -lfam
+# Build test binary (depends on TEST_OBJECTS and TEST_OBJ, excludes main.c)
+$(TEST_BIN): $(TEST_OBJECTS) $(TEST_OBJ) | $(BINDIR)
+	$(CC) $(TEST_BINARY_CFLAGS) $(LDFLAGS) $(SRCDIR)/test/main.c -o $@ $(TEST_OBJECTS) $(TEST_OBJ) -lfam
 
 # Run tests
 test: $(TEST_BIN)
