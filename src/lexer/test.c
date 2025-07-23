@@ -7,6 +7,7 @@ Test(lexer1) {
 	Lexer l;
 	Token t;
 	const u8 *text = "\r  \n int  \tx(Data *v) { return v->x; } ";
+
 	lexer_init(&l, text, strlen(text));
 
 	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_OK, "ok");
@@ -118,7 +119,7 @@ Test(lexer4_unterminated) {
 
 	lexer_init(&l, text, strlen(text));
 
-	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_ERR, "unterminated string");
+	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_ERR, "unterminated * string");
 	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_COMPLETE, "complete");
 }
 
@@ -149,7 +150,6 @@ Test(lexer5_numbers) {
 	ASSERT_EQ(t.len, 5, "t.len=5");
 	ASSERT(!strcmpn(t.value, "1e-10", 5), "1e-10");
 
-	/* Invalid value */
 	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_ERR, "hex float");
 }
 

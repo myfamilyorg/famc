@@ -1,5 +1,6 @@
 #include <famc/lexer.H>
 #include <libfam/error.H>
+#include <libfam/format.H>
 #include <libfam/misc.H>
 
 STATIC void lexer_incr_offset(Lexer* lex) {
@@ -89,8 +90,10 @@ STATIC i32 lexer_proc_string_lit(Lexer* lex) {
 			lexer_incr_offset(lex);
 			continue;
 		}
+
 		lexer_incr_offset(lex);
 	}
+
 	err = EINVAL;
 	return TOKEN_ERR;
 }

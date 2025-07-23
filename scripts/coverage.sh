@@ -33,10 +33,10 @@ COVDIR=".cov"
 CC="gcc"
 CFLAGS="-DPAGE_SIZE=16384 \
 	-I${INCLDIR} \
-	-O3 \
 	-DMEMSAN=0 \
 	-DSTATIC= \
 	-g \
+	-fno-builtin \
 	-Wno-builtin-declaration-mismatch"
 
 # Architecture-specific flags
@@ -96,6 +96,7 @@ done
 
 # Link test binary
 COMMAND="${CC} \
+	-lfam \
 	${LDFLAGS} \
 	${TEST_OBJS} \
 	${LIB_OBJS} \
@@ -104,7 +105,6 @@ COMMAND="${CC} \
 	${LIBGCOV} \
 	-lc \
 	-lgcc \
-	-lfam \
 	-DCOVERAGE \
 	-o ${COV_BIN} \
 	-Wno-builtin-declaration-mismatch"
