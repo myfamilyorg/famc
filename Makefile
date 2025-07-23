@@ -83,7 +83,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 # Build main binary
 $(BINARY): $(OBJECTS) | $(BINDIR)
-	$(CC) $(BIN_CFLAGS) $(LDFLAGS) -lfam -o $@ $^
+	$(CC) $(BIN_CFLAGS) $(LDFLAGS) -o $@ $^ -lfam
 
 # Rules for test objects
 $(TOBJDIR)/%.o: $(SRCDIR)/%.c | $(TOBJDIR)
@@ -92,7 +92,7 @@ $(TOBJDIR)/%.o: $(SRCDIR)/%.c | $(TOBJDIR)
 
 # Build test binary
 $(TEST_BIN): $(TEST_OBJ) | $(BINDIR)
-	$(CC) $(TEST_BINARY_CFLAGS) $(LDFLAGS) -lfam $(SRCDIR)/test/main.c -o $@ $^
+	$(CC) $(TEST_BINARY_CFLAGS) $(LDFLAGS) $(SRCDIR)/test/main.c -o $@ $^ -lfam
 
 # Run tests
 test: $(TEST_BIN)
