@@ -1,6 +1,7 @@
 #include <famc/lexer.H>
 #include <libfam/error.H>
 #include <libfam/misc.H>
+#include <libfam/syscall_const.H>
 #include <libfam/test.H>
 
 Test(lexer1) {
@@ -292,3 +293,52 @@ Test(lexer7_invalid_punct) {
 	ASSERT_EQ(l.err, EINVAL, "err=EINVAL");
 }
 
+void assert_token(Lexer *l, const u8 *v) {
+	Token t;
+	ASSERT_EQ(lexer_next_token(l, &t), TOKEN_OK, "token ok");
+	ASSERT_EQ(t.len, strlen(v), "t.len ok");
+	ASSERT(!strcmpn(t.value, v, t.len), "t.value ok");
+}
+
+Test(lexer8_fam) {
+	Lexer l;
+	Token t;
+	const u8 *path = "./resources/simple.fam";
+	i32 fd = file(path);
+	ASSERT(fd > 0, "fd>0");
+	u64 size = fsize(fd);
+	u8 *text = fmap(fd, size, 0);
+	ASSERT(text, "text!=NULL");
+
+	lexer_init(&l, text, size);
+
+	assert_token(&l, "@");
+	assert_token(&l, "std");
+	assert_token(&l, "::");
+	assert_token(&l, "result");
+	assert_token(&l, "::");
+	assert_token(&l, "Result");
+	assert_token(&l, ";");
+	assert_token(&l, "@");
+	assert_token(&l, "Speak");
+	assert_token(&l, "{");
+	assert_token(&l, "@");
+	assert_token(&l, "speak");
+	assert_token(&l, "(");
+	assert_token(&l, ")");
+	assert_token(&l, ";");
+	assert_token(&l, "@");
+	assert_token(&l, "speak_n_times");
+	assert_token(&l, "(");
+	assert_token(&l, "n");
+	assert_token(&l, ":");
+	assert_token(&l, "u32");
+	assert_token(&l, ")");
+	assert_token(&l, "{");
+	assert_token(&l, "}");
+	assert_token(&l, "}");
+	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_COMPLETE, "complete");
+
+	munmap(text, size);
+	close(fd);
+}

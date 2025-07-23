@@ -270,7 +270,8 @@ STATIC i32 lexer_proc_punct(Lexer* lex) {
 		    (c == '|' && next_c == '|') ||
 		    (c == '+' && next_c == '+') ||
 		    (c == '-' && next_c == '-') ||
-		    (c == '-' && next_c == '>')) {
+		    (c == '-' && next_c == '>') ||
+		    (c == ':' && next_c == ':')) {
 			lexer_incr_offset(lex);
 			lexer_incr_offset(lex);
 			return TOKEN_OK;

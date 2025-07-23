@@ -1,0 +1,11 @@
+// Import statement based on semantics, we know this is import because of the fact there's no '{' indiciating trait.
+@std::result::Result;
+
+// Trait
+@Speak {
+	// required method.
+	@speak();
+	// required method with default impl
+	@speak_n_times(n: u32) {
+	}
+}
