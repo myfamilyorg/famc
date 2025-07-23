@@ -96,7 +96,6 @@ done
 
 # Link test binary
 COMMAND="${CC} \
-	-lfam \
 	${LDFLAGS} \
 	${TEST_OBJS} \
 	${LIB_OBJS} \
@@ -107,7 +106,8 @@ COMMAND="${CC} \
 	-lgcc \
 	-DCOVERAGE \
 	-o ${COV_BIN} \
-	-Wno-builtin-declaration-mismatch"
+	-Wno-builtin-declaration-mismatch \
+	-lfam"
 echo ${COMMAND}
 ${COMMAND}
 
