@@ -30,51 +30,63 @@
 #include <libfam/types.H>
 
 typedef enum {
+	SynNodeTypeRoot,
 	SynNodeTypeLeaf,
 	SynNodeTypeDeclaration,
 	SynNodeTypeTrait,
 	SynNodeTypeLoop,
 	SynNodeTypeType,
+	SynNodeTypeImport,
 	SynNodeTypeMethod,
 	SynNodeTypeIf,
 } SynNodeType;
+
+typedef struct {
+	const u8 *data;
+	u64 len;
+} SynDataLen;
 
 typedef struct SynNode {
 	SynNodeType stype;
 	union {
 		struct {
-			u8 *data;
-		} Leaf;
+			const u8 *data;
+			u64 len;
+		} leaf;
 		struct {
 			u8 dummy;
-		} Declaration;
+		} declaration;
 		struct {
 			u8 dummy;
-		} Trait;
+		} trait;
 		struct {
 			u8 dummy;
-		} Loop;
+		} loop;
 		struct {
 			u8 dummy;
-		} Type;
+		} type;
+		struct {
+			u64 count;
+			SynDataLen *module_list;
+		} import;
 		struct {
 			u8 dummy;
-		} Method;
+		} method;
 		struct {
 			u8 dummy;
-		} If;
+		} ifvalue;
 	} node_data;
+	struct SynNode *parent;
 	struct SynNode **children;
 	i32 num_children;
 } SynNode;
 
 typedef struct {
 	SynNode *root;
-	Lexer lex;
-	i32 err;
+	SynNode *cur;
 } SynTree;
 
-#define SYN_INIT {NULL}
+#define SYN_INIT {NULL, NULL}
 i32 syn_append(SynTree *tree, const u8 *text, u64 length);
 void syn_cleanup(SynTree *tree);
 
