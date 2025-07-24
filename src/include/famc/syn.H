@@ -23,31 +23,59 @@
  *
  *******************************************************************************/
 
-#ifndef _LEXER_H
-#define _LEXER_H
+#ifndef _SYN_H
+#define _SYN_H
 
+#include <famc/lexer.H>
 #include <libfam/types.H>
 
-typedef struct {
-	const u8* text;
-	u64 len;
-	u64 offset;
-	u64 line_num;
-	u64 col_num;
-} Lexer;
+typedef enum {
+	SynNodeTypeLeaf,
+	SynNodeTypeDeclaration,
+	SynNodeTypeTrait,
+	SynNodeTypeLoop,
+	SynNodeTypeType,
+	SynNodeTypeMethod,
+	SynNodeTypeIf,
+} SynNodeType;
+
+typedef struct SynNode {
+	SynNodeType stype;
+	union {
+		struct {
+			u8 *data;
+		} Leaf;
+		struct {
+			u8 dummy;
+		} Declaration;
+		struct {
+			u8 dummy;
+		} Trait;
+		struct {
+			u8 dummy;
+		} Loop;
+		struct {
+			u8 dummy;
+		} Type;
+		struct {
+			u8 dummy;
+		} Method;
+		struct {
+			u8 dummy;
+		} If;
+	} node_data;
+	struct SynNode **children;
+	i32 num_children;
+} SynNode;
 
 typedef struct {
-	const u8* value;
-	u64 len;
-	u64 line_num;
-	u64 col_num;
-} Token;
+	SynNode *root;
+	Lexer lex;
+	i32 err;
+} SynTree;
 
-#define TOKEN_COMPLETE 0
-#define TOKEN_OK 1
-#define TOKEN_ERR 2
+#define SYN_INIT {NULL}
+i32 syn_append(SynTree *tree, const u8 *text, u64 length);
+void syn_cleanup(SynTree *tree);
 
-i32 lexer_init(Lexer* lex, const u8* text, u64 len);
-i32 lexer_next_token(Lexer* lex, Token* next);
-
-#endif /* _LEXER_H */
+#endif /* _SYN_H */

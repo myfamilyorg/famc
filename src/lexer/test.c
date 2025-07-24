@@ -290,7 +290,7 @@ Test(lexer7_invalid_punct) {
 	ASSERT(!strcmpn(t.value, "0xFD", 4), "t.value=0xFD");
 
 	ASSERT_EQ(lexer_next_token(&l, &t), TOKEN_ERR, "invalid $");
-	ASSERT_EQ(l.err, EINVAL, "err=EINVAL");
+	ASSERT_EQ(err, EINVAL, "err=EINVAL");
 }
 
 void assert_token(Lexer *l, const u8 *v) {

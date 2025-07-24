@@ -9,7 +9,7 @@ BINDIR = bin
 OBJDIR = .obj
 TEST_OBJDIR = .testobj
 TOBJDIR = .tobj
-SRC_DIRS = lexer main
+SRC_DIRS = lexer syn main
 
 # Installation paths
 PREFIX ?= /usr

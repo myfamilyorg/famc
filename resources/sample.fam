@@ -1,4 +1,5 @@
-// Import statement based on semantics, we know this is import because of the fact there's no '{' indiciating trait.
+// Import statement based on semantics, we know this is import because of the
+// fact there's no '{' indiciating trait.
 @std::result::Result;
 
 // Trait
@@ -6,51 +7,44 @@
 	// required method.
 	@speak();
 	// required method with default impl
-	@speak_n_times(n: u32) {
-		for(u32 i; i<n; i++) {
-			self.speak();
-		}
+	@speak_n_times(n : u32) {
+		$i = 0;
+		? (i < n) { @speak(); }
+		(i++ < n);
 	}
 	// static method
-	speak_generic() {
-		println!("generic noise!");
-	}
+	speak_generic() { println !("generic noise!"); }
 }
 
 // struct (by inference)
 Cat {
-	age: u8;
-	lives_used: u8;
+age: u8;
+lives_used: u8;
 }
 
 // struct (by inference)
 Dog {
-	age: u8;
+age: u8;
 }
 
 // struct (by inference)
 Bird {
-	age: u8;
+age: u8;
 }
 
 // implement Speak trait for Cat
 @Speak::Cat {
 	// implement required function, parameters are infered from above
-	speak {
-		println!("meow!");
-	}
+	speak { println !("meow!"); }
 }
 
 // implmeent Speak trait for Dog
 @Speak::Dog {
 	// implement required function, parameters are infered from above
-	speak {
-		println!("ruff!");
-	}
+	speak { println !("ruff!"); }
 	// override speak_n_times, parameters are infered from above
 	speak_n_times {
-		for(u32 i=0; i<n; i++) 
-			println!("ruff!");
+		for (u32 i = 0; i < n; i++) println !("ruff!");
 		println("dog spoke {} times!", n);
 	}
 }
@@ -58,13 +52,9 @@ Bird {
 // implmeent Speak trait for Bird
 @Speak::Bird {
 	// implement required function, parameters are infered from above
-	speak {
-		println("chirp!");
-	}
+	speak { println("chirp!"); }
 }
 
 @Main::MyProg {
-	main {
-		Ok(0)
-	}
+	main { Ok(0) }
 }
