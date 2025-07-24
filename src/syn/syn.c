@@ -14,27 +14,26 @@ STATIC i32 syn_try_compact(SynTree *tree) {
 	u64 first_leaf = 0;
 	if (num > 1) {
 		if (LEAF_DATA_EQUAL(children[num - 1], ";")) {
-			println("semi!!!!");
 			for (i = 0; i < num; i++) {
 				if (children[i]->stype == SynNodeTypeLeaf)
 					break;
 				first_leaf++;
 			}
-			println("first_leaf={}", first_leaf);
-			if (LEAF_DATA_EQUAL(children[first_leaf], "@")) {
+			if (first_leaf < num &&
+			    LEAF_DATA_EQUAL(children[first_leaf], "@")) {
 				if ((num - first_leaf) % 2 == 1) {
 					SynNode *nnode = alloc(sizeof(SynNode));
 					if (!nnode) return -1;
-					println("nnode={x}", (u64)nnode);
 					nnode->stype = SynNodeTypeImport;
-					count = (num - first_leaf) / 2;
+					count = (num - first_leaf - 1) / 2;
 					nnode->node_data.import.count = count;
 					nnode->node_data.import.module_list =
 					    alloc(sizeof(SynDataLen) * count);
 					if (!nnode->node_data.import
-						 .module_list)
+						 .module_list) {
+						release(nnode);
 						return -1;
-					println("insert count = {}", count);
+					}
 					for (i = 0; i < count; i++) {
 						nnode->node_data.import
 						    .module_list[i]
@@ -51,19 +50,21 @@ STATIC i32 syn_try_compact(SynTree *tree) {
 					}
 
 					for (i = first_leaf; i < num; i++) {
-						release(tree->cur->children[i]);
+						release(children[i]);
 					}
 
+					void *tmp =
+					    resize(tree->cur->children,
+						   (first_leaf + 1) *
+						       sizeof(SynNode *));
+					if (!tmp) {
+						release(nnode);
+						return -1;
+					}
+					tree->cur->children = tmp;
 					tree->cur->num_children =
-					    1 + first_leaf;
+					    first_leaf + 1;
 					tree->cur->children[first_leaf] = nnode;
-					println(
-					    "nnode->stype={},tree->stype={}",
-					    nnode->stype,
-					    tree->cur->children[first_leaf]
-						->stype);
-
-					println("import!!!!");
 				}
 			}
 		}
@@ -93,14 +94,17 @@ i32 syn_append(SynTree *tree, const u8 *text, u64 length) {
 	while ((token_ret = lexer_next_token(&lex, &token)) != TOKEN_COMPLETE) {
 		struct SynNode *nnode;
 		u64 nchildren;
-		void *tmp;
+		struct SynNode **tmp;
 		if (token_ret == TOKEN_ERR) return -1;
 
-		nnode = alloc(sizeof(SynNode));
+		nnode = alloc(sizeof(struct SynNode));
 		if (!nnode) return -1;
 		nnode->stype = SynNodeTypeLeaf;
 		nnode->node_data.leaf.data = token.value;
 		nnode->node_data.leaf.len = token.len;
+		nnode->children = NULL;
+		nnode->num_children = 0;
+		nnode->parent = tree->cur;
 		nchildren = tree->cur->num_children + 1;
 		tmp = resize(tree->cur->children,
 			     nchildren * sizeof(struct SynNode *));
@@ -111,15 +115,6 @@ i32 syn_append(SynTree *tree, const u8 *text, u64 length) {
 		tree->cur->children = tmp;
 		tree->cur->children[tree->cur->num_children] = nnode;
 		tree->cur->num_children++;
-
-		{
-			u8 buf[128];
-			memcpy(buf, token.value, token.len);
-			buf[token.len] = 0;
-			println("token={},num_children={}", buf,
-				tree->cur->num_children);
-		}
-
 		syn_try_compact(tree);
 	}
 
@@ -127,7 +122,15 @@ i32 syn_append(SynTree *tree, const u8 *text, u64 length) {
 }
 
 void syn_cleanup(SynTree *tree) {
-	if (!tree) {
+	i32 i;
+	for (i = 0; i < tree->root->num_children; i++) {
+		if (tree->root->children[i]->stype == SynNodeTypeImport) {
+			release(tree->root->children[i]
+				    ->node_data.import.module_list);
+		}
+		release(tree->root->children[i]);
 	}
+	release(tree->root->children);
+	release(tree->root);
 }
 

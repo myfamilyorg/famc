@@ -48,6 +48,9 @@ typedef struct {
 
 typedef struct SynNode {
 	SynNodeType stype;
+	struct SynNode *parent;
+	struct SynNode **children;
+	i32 num_children;
 	union {
 		struct {
 			const u8 *data;
@@ -76,9 +79,6 @@ typedef struct SynNode {
 			u8 dummy;
 		} ifvalue;
 	} node_data;
-	struct SynNode *parent;
-	struct SynNode **children;
-	i32 num_children;
 } SynNode;
 
 typedef struct {
