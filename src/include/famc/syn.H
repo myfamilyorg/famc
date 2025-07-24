@@ -36,10 +36,55 @@ typedef enum {
 	SynNodeTypeTrait,
 	SynNodeTypeLoop,
 	SynNodeTypeType,
+	SynNodeTypeBin,
 	SynNodeTypeImport,
 	SynNodeTypeMethod,
 	SynNodeTypeIf,
 } SynNodeType;
+
+typedef enum {
+	/* Arithmetic operators */
+	BinaryOpCodeAdd, /* + */
+	BinaryOpCodeSub, /* - */
+	BinaryOpCodeMul, /* * */
+	BinaryOpCodeDiv, /* / */
+	BinaryOpCodeMod, /* % */
+
+	/* Bitwise operators */
+	BinaryOpCodeBitAnd,	/* & */
+	BinaryOpCodeBitOr,	/* | */
+	BinaryOpCodeBitXor,	/* ^ */
+	BinaryOpCodeShiftLeft,	/* << */
+	BinaryOpCodeShiftRight, /* >> */
+
+	/* Logical operators */
+	BinaryOpCodeLogicalAnd, /* && */
+	BinaryOpCodeLogicalOr,	/* || */
+
+	/* Relational operators */
+	BinaryOpCodeLess,	  /* < */
+	BinaryOpCodeGreater,	  /* > */
+	BinaryOpCodeLessEqual,	  /* <= */
+	BinaryOpCodeGreaterEqual, /* >= */
+	BinaryOpCodeEqual,	  /* == */
+	BinaryOpCodeNotEqual,	  /* != */
+
+	/* Assignment operators */
+	BinaryOpCodeAssign,	      /* = */
+	BinaryOpCodeAddAssign,	      /* += */
+	BinaryOpCodeSubAssign,	      /* -= */
+	BinaryOpCodeMulAssign,	      /* *= */
+	BinaryOpCodeDivAssign,	      /* /= */
+	BinaryOpCodeModAssign,	      /* %= */
+	BinaryOpCodeAndAssign,	      /* &= */
+	BinaryOpCodeOrAssign,	      /* |= */
+	BinaryOpCodeXorAssign,	      /* ^= */
+	BinaryOpCodeShiftLeftAssign,  /* <<= */
+	BinaryOpCodeShiftRightAssign, /* >>= */
+
+	/* Miscellaneous */
+	BinaryOpCodeComma /* , */
+} BinaryOpCode;
 
 typedef struct {
 	const u8 *data;
@@ -56,6 +101,7 @@ typedef struct SynNode {
 		struct {
 			const u8 *data;
 			u64 len;
+			TokenType tt;
 		} leaf;
 		struct {
 			u8 dummy;
@@ -66,6 +112,9 @@ typedef struct SynNode {
 		struct {
 			u8 dummy;
 		} loop;
+		struct {
+			BinaryOpCode op;
+		} binary;
 		struct {
 			u8 dummy;
 		} type;

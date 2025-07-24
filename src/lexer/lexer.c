@@ -309,6 +309,7 @@ i32 lexer_init(Lexer* lex, const u8* text, u64 len) {
 i32 lexer_next_token(Lexer* lex, Token* next) {
 	u64 start, line_num, col_num;
 	i32 ret;
+	TokenType tt;
 	u8 next_char;
 	if (!lex || !next) {
 		return TOKEN_ERR;
@@ -324,23 +325,30 @@ i32 lexer_next_token(Lexer* lex, Token* next) {
 
 	next_char = lex->text[lex->offset];
 
-	if (next_char == '"')
+	if (next_char == '"') {
 		ret = lexer_proc_string_lit(lex);
-	else if (next_char == '\'')
+		tt = TTStringLit;
+	} else if (next_char == '\'') {
 		ret = lexer_proc_char_lit(lex);
-	else if (next_char <= '9' && next_char >= '0')
+		tt = TTCharLit;
+	} else if (next_char <= '9' && next_char >= '0') {
 		ret = lexer_proc_number_lit(lex);
-	else if ((next_char <= 'z' && next_char >= 'a') ||
-		 (next_char <= 'Z' && next_char >= 'A') || next_char == '_')
+		tt = TTNumLit;
+	} else if ((next_char <= 'z' && next_char >= 'a') ||
+		   (next_char <= 'Z' && next_char >= 'A') || next_char == '_') {
 		ret = lexer_proc_ident(lex);
-	else
+		tt = TTIdent;
+	} else {
 		ret = lexer_proc_punct(lex);
+		tt = TTPunct;
+	}
 
 	if (ret == TOKEN_OK) {
 		next->value = lex->text + start;
 		next->len = lex->offset - start;
 		next->line_num = line_num;
 		next->col_num = col_num;
+		next->ttype = tt;
 	}
 
 	return ret;

@@ -28,6 +28,14 @@
 
 #include <libfam/types.H>
 
+typedef enum {
+	TTStringLit,
+	TTCharLit,
+	TTNumLit,
+	TTIdent,
+	TTPunct,
+} TokenType;
+
 typedef struct {
 	const u8* text;
 	u64 len;
@@ -41,6 +49,7 @@ typedef struct {
 	u64 len;
 	u64 line_num;
 	u64 col_num;
+	TokenType ttype;
 } Token;
 
 #define TOKEN_COMPLETE 0
