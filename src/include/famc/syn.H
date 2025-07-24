@@ -51,6 +51,7 @@ typedef struct SynNode {
 	struct SynNode *parent;
 	struct SynNode **children;
 	i32 num_children;
+	u64 first_leaf;
 	union {
 		struct {
 			const u8 *data;

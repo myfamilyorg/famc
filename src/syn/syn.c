@@ -7,25 +7,27 @@
 	child->node_data.leaf.len == strlen(text) && \
 	    !strcmpn(child->node_data.leaf.data, text, strlen(text))
 
+STATIC i32 syn_compact_import(SynTree *tree) {
+	if (!tree) return -1;
+	return 0;
+}
+
 STATIC i32 syn_try_compact(SynTree *tree) {
 	u64 i, count;
 	SynNode **children = tree->cur->children;
 	u64 num = tree->cur->num_children;
-	u64 first_leaf = 0;
 	if (num > 1) {
 		if (LEAF_DATA_EQUAL(children[num - 1], ";")) {
-			for (i = 0; i < num; i++) {
-				if (children[i]->stype == SynNodeTypeLeaf)
-					break;
-				first_leaf++;
-			}
-			if (first_leaf < num &&
-			    LEAF_DATA_EQUAL(children[first_leaf], "@")) {
-				if ((num - first_leaf) % 2 == 1) {
+			if (tree->cur->first_leaf < num &&
+			    LEAF_DATA_EQUAL(children[tree->cur->first_leaf],
+					    "@")) {
+				if ((num - tree->cur->first_leaf) % 2 == 1) {
 					SynNode *nnode = alloc(sizeof(SynNode));
 					if (!nnode) return -1;
 					nnode->stype = SynNodeTypeImport;
-					count = (num - first_leaf - 1) / 2;
+					count =
+					    (num - tree->cur->first_leaf - 1) /
+					    2;
 					nnode->node_data.import.count = count;
 					nnode->node_data.import.module_list =
 					    alloc(sizeof(SynDataLen) * count);
@@ -38,24 +40,27 @@ STATIC i32 syn_try_compact(SynTree *tree) {
 						nnode->node_data.import
 						    .module_list[i]
 						    .data =
-						    children[first_leaf + 1 +
-							     i * 2]
+						    children[tree->cur
+								 ->first_leaf +
+							     1 + i * 2]
 							->node_data.leaf.data;
 						nnode->node_data.import
 						    .module_list[i]
 						    .len =
-						    children[first_leaf + 1 +
-							     i * 2]
+						    children[tree->cur
+								 ->first_leaf +
+							     1 + i * 2]
 							->node_data.leaf.len;
 					}
 
-					for (i = first_leaf; i < num; i++) {
+					for (i = tree->cur->first_leaf; i < num;
+					     i++) {
 						release(children[i]);
 					}
 
 					void *tmp =
 					    resize(tree->cur->children,
-						   (first_leaf + 1) *
+						   (tree->cur->first_leaf + 1) *
 						       sizeof(SynNode *));
 					if (!tmp) {
 						release(nnode);
@@ -63,13 +68,27 @@ STATIC i32 syn_try_compact(SynTree *tree) {
 					}
 					tree->cur->children = tmp;
 					tree->cur->num_children =
-					    first_leaf + 1;
-					tree->cur->children[first_leaf] = nnode;
+					    tree->cur->first_leaf + 1;
+					tree->cur
+					    ->children[tree->cur->first_leaf] =
+					    nnode;
+					tree->cur->first_leaf++;
 				}
 			}
 		}
 	}
 	return 0;
+}
+
+STATIC void free_syn_node(SynNode *node) {
+	i32 i;
+	if (!node) return;
+	for (i = 0; i < node->num_children; i++)
+		free_syn_node(node->children[i]);
+	if (node->stype == SynNodeTypeImport)
+		release(node->node_data.import.module_list);
+	release(node->children);
+	release(node);
 }
 
 i32 syn_append(SynTree *tree, const u8 *text, u64 length) {
@@ -87,16 +106,14 @@ i32 syn_append(SynTree *tree, const u8 *text, u64 length) {
 		tree->root->parent = NULL;
 		tree->root->children = NULL;
 		tree->root->num_children = 0;
+		tree->root->first_leaf = 0;
 	}
-
 	if (lexer_init(&lex, text, length) < 0) return -1;
-
 	while ((token_ret = lexer_next_token(&lex, &token)) != TOKEN_COMPLETE) {
 		struct SynNode *nnode;
 		u64 nchildren;
-		struct SynNode **tmp;
+		void *tmp;
 		if (token_ret == TOKEN_ERR) return -1;
-
 		nnode = alloc(sizeof(struct SynNode));
 		if (!nnode) return -1;
 		nnode->stype = SynNodeTypeLeaf;
@@ -105,6 +122,7 @@ i32 syn_append(SynTree *tree, const u8 *text, u64 length) {
 		nnode->children = NULL;
 		nnode->num_children = 0;
 		nnode->parent = tree->cur;
+		nnode->first_leaf = 0;
 		nchildren = tree->cur->num_children + 1;
 		tmp = resize(tree->cur->children,
 			     nchildren * sizeof(struct SynNode *));
@@ -113,8 +131,7 @@ i32 syn_append(SynTree *tree, const u8 *text, u64 length) {
 			return -1;
 		}
 		tree->cur->children = tmp;
-		tree->cur->children[tree->cur->num_children] = nnode;
-		tree->cur->num_children++;
+		tree->cur->children[tree->cur->num_children++] = nnode;
 		syn_try_compact(tree);
 	}
 
@@ -122,15 +139,7 @@ i32 syn_append(SynTree *tree, const u8 *text, u64 length) {
 }
 
 void syn_cleanup(SynTree *tree) {
-	i32 i;
-	for (i = 0; i < tree->root->num_children; i++) {
-		if (tree->root->children[i]->stype == SynNodeTypeImport) {
-			release(tree->root->children[i]
-				    ->node_data.import.module_list);
-		}
-		release(tree->root->children[i]);
-	}
-	release(tree->root->children);
-	release(tree->root);
+	if (!tree || !tree->root) return;
+	free_syn_node(tree->root);
+	tree->cur = tree->root = NULL;
 }
-
