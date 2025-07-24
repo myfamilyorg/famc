@@ -8,12 +8,46 @@
 	    !strcmpn(child->node_data.leaf.data, text, strlen(text))
 
 STATIC i32 syn_compact_import(SynTree *tree) {
-	if (!tree) return -1;
+	u64 i, count;
+	SynNode **children = tree->cur->children;
+	u64 num = tree->cur->num_children;
+	SynNode *nnode = alloc(sizeof(SynNode));
+	if (!nnode) return -1;
+	nnode->stype = SynNodeTypeImport;
+	count = (num - tree->cur->first_leaf - 1) / 2;
+	nnode->node_data.import.count = count;
+	nnode->node_data.import.module_list = alloc(sizeof(SynDataLen) * count);
+	if (!nnode->node_data.import.module_list) {
+		release(nnode);
+		return -1;
+	}
+	for (i = 0; i < count; i++) {
+		nnode->node_data.import.module_list[i].data =
+		    children[tree->cur->first_leaf + 1 + i * 2]
+			->node_data.leaf.data;
+		nnode->node_data.import.module_list[i].len =
+		    children[tree->cur->first_leaf + 1 + i * 2]
+			->node_data.leaf.len;
+	}
+
+	for (i = tree->cur->first_leaf; i < num; i++) {
+		release(children[i]);
+	}
+
+	void *tmp = resize(tree->cur->children,
+			   (tree->cur->first_leaf + 1) * sizeof(SynNode *));
+	if (!tmp) {
+		release(nnode);
+		return -1;
+	}
+	tree->cur->children = tmp;
+	tree->cur->num_children = tree->cur->first_leaf + 1;
+	tree->cur->children[tree->cur->first_leaf] = nnode;
+	tree->cur->first_leaf++;
 	return 0;
 }
 
 STATIC i32 syn_try_compact(SynTree *tree) {
-	u64 i, count;
 	SynNode **children = tree->cur->children;
 	u64 num = tree->cur->num_children;
 	if (num > 1) {
@@ -21,59 +55,7 @@ STATIC i32 syn_try_compact(SynTree *tree) {
 			if (tree->cur->first_leaf < num &&
 			    LEAF_DATA_EQUAL(children[tree->cur->first_leaf],
 					    "@")) {
-				if ((num - tree->cur->first_leaf) % 2 == 1) {
-					SynNode *nnode = alloc(sizeof(SynNode));
-					if (!nnode) return -1;
-					nnode->stype = SynNodeTypeImport;
-					count =
-					    (num - tree->cur->first_leaf - 1) /
-					    2;
-					nnode->node_data.import.count = count;
-					nnode->node_data.import.module_list =
-					    alloc(sizeof(SynDataLen) * count);
-					if (!nnode->node_data.import
-						 .module_list) {
-						release(nnode);
-						return -1;
-					}
-					for (i = 0; i < count; i++) {
-						nnode->node_data.import
-						    .module_list[i]
-						    .data =
-						    children[tree->cur
-								 ->first_leaf +
-							     1 + i * 2]
-							->node_data.leaf.data;
-						nnode->node_data.import
-						    .module_list[i]
-						    .len =
-						    children[tree->cur
-								 ->first_leaf +
-							     1 + i * 2]
-							->node_data.leaf.len;
-					}
-
-					for (i = tree->cur->first_leaf; i < num;
-					     i++) {
-						release(children[i]);
-					}
-
-					void *tmp =
-					    resize(tree->cur->children,
-						   (tree->cur->first_leaf + 1) *
-						       sizeof(SynNode *));
-					if (!tmp) {
-						release(nnode);
-						return -1;
-					}
-					tree->cur->children = tmp;
-					tree->cur->num_children =
-					    tree->cur->first_leaf + 1;
-					tree->cur
-					    ->children[tree->cur->first_leaf] =
-					    nnode;
-					tree->cur->first_leaf++;
-				}
+				syn_compact_import(tree);
 			}
 		}
 	}
