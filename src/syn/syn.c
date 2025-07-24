@@ -8,10 +8,11 @@
 	    !strcmpn(child->node_data.leaf.data, text, strlen(text))
 
 STATIC i32 syn_compact_import(SynTree *tree) {
-	u64 i, count;
+	void *tmp;
+	u64 i, count, num;
 	SynNode **children = tree->cur->children;
-	u64 num = tree->cur->num_children;
 	SynNode *nnode = alloc(sizeof(SynNode));
+	num = tree->cur->num_children;
 	if (!nnode) return -1;
 	nnode->stype = SynNodeTypeImport;
 	count = (num - tree->cur->first_leaf - 1) / 2;
@@ -30,33 +31,28 @@ STATIC i32 syn_compact_import(SynTree *tree) {
 			->node_data.leaf.len;
 	}
 
-	for (i = tree->cur->first_leaf; i < num; i++) {
-		release(children[i]);
-	}
-
-	void *tmp = resize(tree->cur->children,
-			   (tree->cur->first_leaf + 1) * sizeof(SynNode *));
+	for (i = tree->cur->first_leaf; i < num; i++) release(children[i]);
+	tmp = resize(tree->cur->children,
+		     (tree->cur->first_leaf + 1) * sizeof(SynNode *));
 	if (!tmp) {
+		release(nnode->node_data.import.module_list);
 		release(nnode);
 		return -1;
 	}
 	tree->cur->children = tmp;
 	tree->cur->num_children = tree->cur->first_leaf + 1;
-	tree->cur->children[tree->cur->first_leaf] = nnode;
-	tree->cur->first_leaf++;
+	tree->cur->children[tree->cur->first_leaf++] = nnode;
 	return 0;
 }
 
 STATIC i32 syn_try_compact(SynTree *tree) {
 	SynNode **children = tree->cur->children;
 	u64 num = tree->cur->num_children;
-	if (num > 1) {
-		if (LEAF_DATA_EQUAL(children[num - 1], ";")) {
-			if (tree->cur->first_leaf < num &&
-			    LEAF_DATA_EQUAL(children[tree->cur->first_leaf],
-					    "@")) {
-				syn_compact_import(tree);
-			}
+	if (num - tree->cur->first_leaf > 1 &&
+	    LEAF_DATA_EQUAL(children[num - 1], ";")) {
+		if (tree->cur->first_leaf < num &&
+		    LEAF_DATA_EQUAL(children[tree->cur->first_leaf], "@")) {
+			if (syn_compact_import(tree) < 0) return -1;
 		}
 	}
 	return 0;
@@ -114,7 +110,7 @@ i32 syn_append(SynTree *tree, const u8 *text, u64 length) {
 		}
 		tree->cur->children = tmp;
 		tree->cur->children[tree->cur->num_children++] = nnode;
-		syn_try_compact(tree);
+		if (syn_try_compact(tree) < 0) return -1;
 	}
 
 	return 0;

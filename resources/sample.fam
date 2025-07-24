@@ -7,13 +7,24 @@
 	// required method.
 	@speak();
 	// required method with default impl
-	@speak_n_times(n : u32) {
-		$i = 0;
-		? (i < n) { @speak(); }
-		(i++ < n);
+	@speak_n_times($n : num, $!y: num) {
+		$!i = 0; /* Mutable */
+		? i < n { @speak(); }
+		i++ < n;
+
+		i = 0;
+		$!j = 1; /* Mutable */
+		{
+			$j = 1; /* Immutable */
+			println!("hi");
+		} i++<n;
+
+		{
+			println!("once");
+		} 0;
 	}
 	// static method
-	speak_generic() { println !("generic noise!"); }
+	speak_generic() { println!("generic noise!"); }
 }
 
 // struct (by inference)
