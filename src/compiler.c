@@ -69,88 +69,6 @@ struct io_uring_sqe {
 	} addr3;
 };
 
-enum io_uring_op {
-	IORING_OP_NOP,
-	IORING_OP_READV,
-	IORING_OP_WRITEV,
-	IORING_OP_FSYNC,
-	IORING_OP_READ_FIXED,
-	IORING_OP_WRITE_FIXED,
-	IORING_OP_POLL_ADD,
-	IORING_OP_POLL_REMOVE,
-	IORING_OP_SYNC_FILE_RANGE,
-	IORING_OP_SENDMSG,
-	IORING_OP_RECVMSG,
-	IORING_OP_TIMEOUT,
-	IORING_OP_TIMEOUT_REMOVE,
-	IORING_OP_ACCEPT,
-	IORING_OP_ASYNC_CANCEL,
-	IORING_OP_LINK_TIMEOUT,
-	IORING_OP_CONNECT,
-	IORING_OP_FALLOCATE,
-	IORING_OP_OPENAT,
-	IORING_OP_CLOSE,
-	IORING_OP_FILES_UPDATE,
-	IORING_OP_STATX,
-	IORING_OP_READ,
-	IORING_OP_WRITE,
-	IORING_OP_FADVISE,
-	IORING_OP_MADVISE,
-	IORING_OP_SEND,
-	IORING_OP_RECV,
-	IORING_OP_OPENAT2,
-	IORING_OP_EPOLL_CTL,
-	IORING_OP_SPLICE,
-	IORING_OP_PROVIDE_BUFFERS,
-	IORING_OP_REMOVE_BUFFERS,
-	IORING_OP_TEE,
-	IORING_OP_SHUTDOWN,
-	IORING_OP_RENAMEAT,
-	IORING_OP_UNLINKAT,
-	IORING_OP_MKDIRAT,
-	IORING_OP_SYMLINKAT,
-	IORING_OP_LINKAT,
-	IORING_OP_MSG_RING,
-	IORING_OP_FSETXATTR,
-	IORING_OP_SETXATTR,
-	IORING_OP_FGETXATTR,
-	IORING_OP_GETXATTR,
-	IORING_OP_SOCKET,
-	IORING_OP_URING_CMD,
-	IORING_OP_SEND_ZC,
-	IORING_OP_SENDMSG_ZC,
-	IORING_OP_READ_MULTISHOT,
-	IORING_OP_WAITID,
-	IORING_OP_FUTEX_WAIT,
-	IORING_OP_FUTEX_WAKE,
-	IORING_OP_FUTEX_WAITV,
-	IORING_OP_FIXED_FD_INSTALL,
-	IORING_OP_FTRUNCATE,
-	IORING_OP_BIND,
-	IORING_OP_LISTEN,
-	IORING_OP_RECV_ZC,
-	IORING_OP_EPOLL_WAIT,
-	IORING_OP_READV_FIXED,
-	IORING_OP_WRITEV_FIXED,
-	IORING_OP_PIPE,
-	IORING_OP_NOP128,
-	IORING_OP_URING_CMD128,
-	IORING_OP_LAST
-};
-
-static const int PROT_READ = 0x01;
-static const int PROT_WRITE = 0x02;
-static const int MAP_SHARED = 0x01;
-/* static const int MAP_PRIVATE = 0x02; */
-static const int MAP_ANONYMOUS = 0x20;
-static const void *MAP_FAILED = (void *)-1;
-
-static const unsigned long IORING_OFF_SQ_RING = 0UL;
-static const unsigned long IORING_OFF_CQ_RING = 0x8000000UL;
-static const unsigned long IORING_OFF_SQES = 0x10000000UL;
-
-static const unsigned IORING_ENTER_GETEVENTS = (1U << 0);
-
 struct Sync {
 	struct io_uring_params params;
 	int ring_fd;
@@ -169,11 +87,96 @@ struct Sync {
 	unsigned *cq_mask;
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-const-variable"
+
+static const int IORING_OP_NOP = 0;
+static const int IORING_OP_READV = 1;
+static const int IORING_OP_WRITEV = 2;
+static const int IORING_OP_FSYNC = 3;
+static const int IORING_OP_READ_FIXED = 4;
+static const int IORING_OP_WRITE_FIXED = 5;
+static const int IORING_OP_POLL_ADD = 6;
+static const int IORING_OP_POLL_REMOVE = 7;
+static const int IORING_OP_SYNC_FILE_RANGE = 8;
+static const int IORING_OP_SENDMSG = 9;
+static const int IORING_OP_RECVMSG = 10;
+static const int IORING_OP_TIMEOUT = 11;
+static const int IORING_OP_TIMEOUT_REMOVE = 12;
+static const int IORING_OP_ACCEPT = 13;
+static const int IORING_OP_ASYNC_CANCEL = 14;
+static const int IORING_OP_LINK_TIMEOUT = 15;
+static const int IORING_OP_CONNECT = 16;
+static const int IORING_OP_FALLOCATE = 17;
+static const int IORING_OP_OPENAT = 18;
+static const int IORING_OP_CLOSE = 19;
+static const int IORING_OP_FILES_UPDATE = 20;
+static const int IORING_OP_STATX = 21;
+static const int IORING_OP_READ = 22;
+static const int IORING_OP_WRITE = 23;
+static const int IORING_OP_FADVISE = 24;
+static const int IORING_OP_MADVISE = 25;
+static const int IORING_OP_SEND = 26;
+static const int IORING_OP_RECV = 27;
+static const int IORING_OP_OPENAT2 = 28;
+static const int IORING_OP_EPOLL_CTL = 29;
+static const int IORING_OP_SPLICE = 30;
+static const int IORING_OP_PROVIDE_BUFFERS = 31;
+static const int IORING_OP_REMOVE_BUFFERS = 32;
+static const int IORING_OP_TEE = 33;
+static const int IORING_OP_SHUTDOWN = 34;
+static const int IORING_OP_RENAMEAT = 35;
+static const int IORING_OP_UNLINKAT = 36;
+static const int IORING_OP_MKDIRAT = 37;
+static const int IORING_OP_SYMLINKAT = 38;
+static const int IORING_OP_LINKAT = 39;
+static const int IORING_OP_MSG_RING = 40;
+static const int IORING_OP_FSETXATTR = 41;
+static const int IORING_OP_SETXATTR = 42;
+static const int IORING_OP_FGETXATTR = 43;
+static const int IORING_OP_GETXATTR = 44;
+static const int IORING_OP_SOCKET = 45;
+static const int IORING_OP_URING_CMD = 46;
+static const int IORING_OP_SEND_ZC = 47;
+static const int IORING_OP_SENDMSG_ZC = 48;
+static const int IORING_OP_READ_MULTISHOT = 49;
+static const int IORING_OP_WAITID = 50;
+static const int IORING_OP_FUTEX_WAIT = 51;
+static const int IORING_OP_FUTEX_WAKE = 52;
+static const int IORING_OP_FUTEX_WAITV = 53;
+static const int IORING_OP_FIXED_FD_INSTALL = 54;
+static const int IORING_OP_FTRUNCATE = 55;
+static const int IORING_OP_BIND = 56;
+static const int IORING_OP_LISTEN = 57;
+static const int IORING_OP_RECV_ZC = 58;
+static const int IORING_OP_EPOLL_WAIT = 59;
+static const int IORING_OP_READV_FIXED = 60;
+static const int IORING_OP_WRITEV_FIXED = 61;
+static const int IORING_OP_PIPE = 62;
+static const int IORING_OP_NOP128 = 63;
+static const int IORING_OP_URING_CMD128 = 64;
+static const int IORING_OP_LAST = 65;
+
+static const int PROT_READ = 1;
+static const int PROT_WRITE = 2;
+static const int MAP_SHARED = 1;
+static const int MAP_PRIVATE = 2;
+static const int MAP_ANONYMOUS = 32;
+static const void *MAP_FAILED = (void *)-1;
+
+static const unsigned long IORING_OFF_SQ_RING = 0;
+static const unsigned long IORING_OFF_CQ_RING = 134217728;
+static const unsigned long IORING_OFF_SQES = 268435456;
+
+static const unsigned IORING_ENTER_GETEVENTS = 1;
+
+#pragma GCC diagnostic pop
+
 static int errno = 0;
 static struct Sync *global_sync = 0;
 
-long raw_syscall(long sysno, long a0, long a1, long a2, long a3, long a4,
-		 long a5) {
+static long raw_syscall(long sysno, long a0, long a1, long a2, long a3, long a4,
+			long a5) {
 	long result;
 	register long _a3 __asm__("r10") = a3;
 	register long _a4 __asm__("r8") = a4;
@@ -255,7 +258,7 @@ static void sync_destroy(struct Sync *sync) {
 	}
 }
 
-int sync_init(struct Sync **s) {
+static int sync_init(struct Sync **s) {
 	struct Sync *sync = 0;
 
 	sync = mmap(0, sizeof(struct Sync), PROT_READ | PROT_WRITE,
@@ -321,7 +324,25 @@ int sync_init(struct Sync **s) {
 	return 0;
 }
 
-long sync_execute(struct Sync *sync, const struct io_uring_sqe sqe) {
+void atomic_add_u32(unsigned *ptr, unsigned value);
+__asm__(
+    ".section .text\n"
+    ".global atomic_add_u32\n"
+    "atomic_add_u32 :\n"
+    "endbr64\n"
+    "lock add %esi,(%rdi)\n"
+    "ret\n");
+
+void atomic_sub_u32(unsigned *ptr, unsigned value);
+__asm__(
+    ".section .text\n"
+    ".global atomic_sub_u32\n"
+    "atomic_sub_u32 :\n"
+    "endbr64\n"
+    "lock sub %esi,(%rdi)\n"
+    "ret\n");
+
+static long sync_execute(struct Sync *sync, const struct io_uring_sqe sqe) {
 	int ret, result;
 	unsigned cq_mask = *sync->cq_mask;
 	unsigned sq_mask = *sync->sq_mask;
@@ -331,11 +352,11 @@ long sync_execute(struct Sync *sync, const struct io_uring_sqe sqe) {
 	unsigned idx, flag = IORING_ENTER_GETEVENTS;
 	sync->sq_array[index] = index;
 	sync->sqes[index] = sqe;
-	__atomic_fetch_add(sync->sq_tail, 1, __ATOMIC_SEQ_CST);
+	atomic_add_u32(sync->sq_tail, 1);
 	ret = io_uring_enter2(sync->ring_fd, 1, 1, flag, 0, 0);
 
 	if (ret < 0)
-		__atomic_fetch_add(sync->sq_tail, 1, __ATOMIC_SEQ_CST);
+		atomic_sub_u32(sync->sq_tail, 1);
 	else {
 		idx = cq_head & cq_mask;
 		result = sync->cqes[idx].res;
@@ -345,7 +366,7 @@ long sync_execute(struct Sync *sync, const struct io_uring_sqe sqe) {
 		} else
 			ret = result;
 
-		__atomic_fetch_add(sync->cq_head, 1, __ATOMIC_RELEASE);
+		atomic_add_u32(sync->cq_head, 1);
 	}
 
 	return ret < 0 ? -1 : ret;
