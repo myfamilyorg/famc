@@ -18,6 +18,12 @@ STATIC_ASSERT(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, little_endian);
 
 #endif /* __famc__ */
 
+struct open_how {
+	unsigned long flags;
+	unsigned long mode;
+	unsigned long resolve;
+};
+
 struct io_cqring_offsets {
 	unsigned head;
 	unsigned tail;
@@ -192,11 +198,11 @@ unsigned IORING_ENTER_GETEVENTS = 1;
 int errno;
 struct Sync *global_sync;
 
-void memset(void *ptr, int value, unsigned long len) {
+void *memset(void *ptr, int value, unsigned long len) {
 	unsigned long i;
 	i = 0;
 loop:
-	if (i >= len) return;
+	if (i >= len) return ptr;
 	((char *)ptr)[i++] = (unsigned char)value;
 	goto loop;
 }
@@ -423,10 +429,30 @@ int pwrite(int fd, void *buf, unsigned long len, unsigned long offset) {
 	return sync_execute(global_sync, sqe);
 }
 
+int open(const char *path, int flags, unsigned mode) {
+	struct open_how how;
+	struct io_uring_sqe sqe;
+
+	memset(&sqe, 0, sizeof(sqe));
+	how.flags = flags;
+	how.mode = mode;
+	how.resolve = 0;
+	sqe.opcode = 28;
+	sqe.addr = (unsigned long)path;
+	sqe.fd = -100;
+	sqe.len = sizeof(struct open_how);
+	sqe.off = (unsigned long)&how;
+	sqe.user_data = 1;
+
+	if (!global_sync)
+		if (sync_init(&global_sync) < 0) return -1;
+	return sync_execute(global_sync, sqe);
+}
+
 int main(int argc, char **argv, char **envp) {
 	global_sync = 0;
 	errno = 0;
-	if (!argv || !envp) {
+	if (!argv || !envp || !argc) {
 		pwrite(2, "err!\n", 5, 0);
 		exit_group(-1);
 	}
