@@ -1,0 +1,11 @@
+#!/bin/sh
+
+BIN_DIR=./bin
+SRC_DIR=./src
+CC=clang
+CFLAGS="-nostdlib -ffreestanding -std=c89 -pedantic -Wall -Wextra -Werror -O2"
+BUILD_OPTIONS="-static -Wl,--build-id=none -fvisibility=hidden"
+COMMAND="${CC} ${CFLAGS}  ${SRC_DIR}/compiler.c ${BUILD_OPTIONS} -o ${BIN_DIR}/famc"
+echo ${COMMAND};
+${COMMAND};
+
