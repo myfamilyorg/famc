@@ -207,6 +207,13 @@ loop:
 	goto loop;
 }
 
+void *memcpy(void *dest, const void *src, unsigned long n) {
+	char *d = (char *)dest;
+	const char *s = (void *)src;
+	while (n--) *d++ = *s++;
+	return dest;
+}
+
 long raw_syscall(long sysno, long a0, long a1, long a2, long a3, long a4,
 		 long a5);
 __asm(
