@@ -603,7 +603,7 @@ begin:
 		l->off += 2;
 
 	comment_body:
-		if (l->off >= l->len) return -1;
+		if (l->off + 1 >= l->len) return -1;
 
 		if (l->in[l->off] == '*' && l->off + 1 < l->len &&
 		    l->in[l->off + 1] == '/') {
@@ -613,6 +613,20 @@ begin:
 
 		l->off++;
 		goto comment_body;
+	}
+
+	if (c == '#') {
+		l->off++;
+	preproc_body:
+		if (l->off >= l->len) return -1;
+		if (l->in[l->off] == '#' && l->in[l->off + 1] == 'e' &&
+		    l->in[l->off + 2] == 'n' && l->in[l->off + 3] == 'd' &&
+		    l->in[l->off + 4] == 'i' && l->in[l->off + 5] == 'f') {
+			l->off += 6;
+			goto begin;
+		}
+		l->off++;
+		goto preproc_body;
 	}
 
 	return 0;
@@ -634,7 +648,10 @@ end:
 
 enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 	if (l->off >= l->len) return Term;
-	if (lexer_skip_whitespace(l) < 0) return TokenError;
+	if (lexer_skip_whitespace(l) < 0) {
+		*start = l->off;
+		return TokenError;
+	}
 	*start = l->off;
 	if (l->in[l->off] == '\"') {
 		l->off++;
