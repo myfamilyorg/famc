@@ -1,8 +1,8 @@
 #!/bin/sh
 
 BIN_DIR=./bin
-SRC_DIR=./
-CC=clang
+SRC_DIR=.
+CC=gcc
 CFLAGS="-nostdlib -ffreestanding -std=c89 -pedantic -Wall -Wextra -Werror -O2"
 BUILD_OPTIONS="-static -Wl,--build-id=none -fvisibility=hidden"
 COMMAND="${CC} ${CFLAGS}  ${SRC_DIR}/compiler.c ${BUILD_OPTIONS} -o ${BIN_DIR}/famc"

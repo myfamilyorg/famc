@@ -18,6 +18,107 @@ STATIC_ASSERT(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, little_endian);
 
 #endif /* __famc__ */
 
+enum TokenType {
+	Term,
+	StringLit,
+	CharLit,
+	NumberLit,
+	SemiPunct,
+	AsteriskPunct,
+	AmpersandPunct,
+	PipePunct,
+	RightBracketPunct,
+	LeftBracketPunct,
+	RightBracePunct,
+	LeftBracePunct,
+	RightParenPunct,
+	LeftParenPunct,
+	DotPunct,
+	PercentPunct,
+	DivPunct,
+	CommaPunct,
+	ColonPunct,
+	BangPunct,
+	NotEqualPunct,
+	EqualIncrPunct,
+	EqualDecrPunct,
+	IncrPunct,
+	DecrPunct,
+	EqualPunct,
+	DoubleEqualPunct,
+	GreaterThanEqualPunct,
+	LessThanEqualPunct,
+	GreaterThanPunct,
+	LessThanPunct,
+	LogicalAndPunct,
+	LogicalOrPunct,
+	MinusPunct,
+	PlusPunct,
+	ArrowPunct,
+	SizeOfReserved,
+	GotoReserved,
+	IfReserved,
+	ElseReserved,
+	EnumReserved,
+	StructReserved,
+	IntReserved,
+	LongReserved,
+	UnsignedReserved,
+	AsmReserved,
+	CharReserved,
+	ShortReserved,
+	ReturnReserved,
+	VoidReserved,
+	Ident,
+	TokenError,
+	TokenTypeLast
+};
+
+struct lexer {
+	char *in;
+	unsigned long off;
+	unsigned long len;
+};
+
+struct token {
+	char *token;
+	long len;
+	int type;
+};
+
+struct statx_timestamp {
+	long tv_sec;
+	unsigned tv_nsec;
+	int __reserved;
+};
+
+struct statx {
+	unsigned stx_mask;
+	unsigned stx_blksize;
+	unsigned long stx_attributes;
+	unsigned stx_nlink;
+	unsigned stx_uid;
+	unsigned stx_gid;
+	unsigned short stx_mode;
+	unsigned short __spare0[1];
+	unsigned long stx_ino;
+	unsigned long stx_size;
+	unsigned long stx_blocks;
+	unsigned long stx_attributes_mask;
+	struct statx_timestamp stx_atime;
+	struct statx_timestamp stx_btime;
+	struct statx_timestamp stx_ctime;
+	struct statx_timestamp stx_mtime;
+	unsigned stx_rdev_major;
+	unsigned stx_rdev_minor;
+	unsigned stx_dev_major;
+	unsigned stx_dev_minor;
+	unsigned long stx_mnt_id;
+	unsigned stx_dio_mem_align;
+	unsigned stx_dio_offset_align;
+	unsigned long __spare3[12];
+};
+
 struct open_how {
 	unsigned long flags;
 	unsigned long mode;
@@ -113,105 +214,37 @@ struct Sync {
 	unsigned *cq_mask;
 };
 
-/*
-int IORING_OP_NOP = 0;
-int IORING_OP_READV = 1;
-int IORING_OP_WRITEV = 2;
-int IORING_OP_FSYNC = 3;
-int IORING_OP_READ_FIXED = 4;
-int IORING_OP_WRITE_FIXED = 5;
-int IORING_OP_POLL_ADD = 6;
-int IORING_OP_POLL_REMOVE = 7;
-int IORING_OP_SYNC_FILE_RANGE = 8;
-int IORING_OP_SENDMSG = 9;
-int IORING_OP_RECVMSG = 10;
-int IORING_OP_TIMEOUT = 11;
-int IORING_OP_TIMEOUT_REMOVE = 12;
-int IORING_OP_ACCEPT = 13;
-int IORING_OP_ASYNC_CANCEL = 14;
-int IORING_OP_LINK_TIMEOUT = 15;
-int IORING_OP_CONNECT = 16;
-int IORING_OP_FALLOCATE = 17;
-int IORING_OP_OPENAT = 18;
-int IORING_OP_CLOSE = 19;
-int IORING_OP_FILES_UPDATE = 20;
-int IORING_OP_STATX = 21;
-int IORING_OP_READ = 22;
-int IORING_OP_WRITE = 23;
-int IORING_OP_FADVISE = 24;
-int IORING_OP_MADVISE = 25;
-int IORING_OP_SEND = 26;
-int IORING_OP_RECV = 27;
-int IORING_OP_OPENAT2 = 28;
-int IORING_OP_EPOLL_CTL = 29;
-int IORING_OP_SPLICE = 30;
-int IORING_OP_PROVIDE_BUFFERS = 31;
-int IORING_OP_REMOVE_BUFFERS = 32;
-int IORING_OP_TEE = 33;
-int IORING_OP_SHUTDOWN = 34;
-int IORING_OP_RENAMEAT = 35;
-int IORING_OP_UNLINKAT = 36;
-int IORING_OP_MKDIRAT = 37;
-int IORING_OP_SYMLINKAT = 38;
-int IORING_OP_LINKAT = 39;
-int IORING_OP_MSG_RING = 40;
-int IORING_OP_FSETXATTR = 41;
-int IORING_OP_SETXATTR = 42;
-int IORING_OP_FGETXATTR = 43;
-int IORING_OP_GETXATTR = 44;
-int IORING_OP_SOCKET = 45;
-int IORING_OP_URING_CMD = 46;
-int IORING_OP_SEND_ZC = 47;
-int IORING_OP_SENDMSG_ZC = 48;
-int IORING_OP_READ_MULTISHOT = 49;
-int IORING_OP_WAITID = 50;
-int IORING_OP_FUTEX_WAIT = 51;
-int IORING_OP_FUTEX_WAKE = 52;
-int IORING_OP_FUTEX_WAITV = 53;
-int IORING_OP_FIXED_FD_INSTALL = 54;
-int IORING_OP_FTRUNCATE = 55;
-int IORING_OP_BIND = 56;
-int IORING_OP_LISTEN = 57;
-int IORING_OP_RECV_ZC = 58;
-int IORING_OP_EPOLL_WAIT = 59;
-int IORING_OP_READV_FIXED = 60;
-int IORING_OP_WRITEV_FIXED = 61;
-int IORING_OP_PIPE = 62;
-int IORING_OP_NOP128 = 63;
-int IORING_OP_URING_CMD128 = 64;
-int IORING_OP_LAST = 65;
-
-int PROT_READ = 1;
-int PROT_WRITE = 2;
-int MAP_SHARED = 1;
-int MAP_PRIVATE = 2;
-int MAP_ANONYMOUS = 32;
-void *MAP_FAILED = (void *)-1;
-
-unsigned long IORING_OFF_SQ_RING = 0;
-unsigned long IORING_OFF_CQ_RING = 134217728;
-unsigned long IORING_OFF_SQES = 268435456;
-
-unsigned IORING_ENTER_GETEVENTS = 1;
-*/
-
 int errno;
 struct Sync *global_sync;
 
 void *memset(void *ptr, int value, unsigned long len) {
 	unsigned long i;
 	i = 0;
-loop:
+begin:
 	if (i >= len) return ptr;
 	((char *)ptr)[i++] = (unsigned char)value;
-	goto loop;
+	goto begin;
 }
 
-void *memcpy(void *dest, const void *src, unsigned long n) {
+void *memcpy(void *dest, void *src, unsigned long n) {
 	char *d = (char *)dest;
-	const char *s = (void *)src;
-	while (n--) *d++ = *s++;
+	char *s = (void *)src;
+begin:
+	if (n--) goto end;
+	*d++ = *s++;
+	goto begin;
+end:
 	return dest;
+}
+
+unsigned long strlen(char *x) {
+	char *y = x;
+begin:
+	if (!*x) goto end;
+	x++;
+	goto begin;
+end:
+	return x - y;
 }
 
 long raw_syscall(long sysno, long a0, long a1, long a2, long a3, long a4,
@@ -369,20 +402,20 @@ int sync_init(struct Sync **s) {
 	return 0;
 }
 
-void atomic_add_u32(unsigned *ptr, unsigned value);
+void atomic_add_unsigned(unsigned *ptr, unsigned value);
 __asm(
     ".section .text\n"
-    ".local atomic_add_u32\n"
-    "atomic_add_u32 :\n"
+    ".local atomic_add_unsigned\n"
+    "atomic_add_unsigned :\n"
     "endbr64\n"
     "lock add %esi,(%rdi)\n"
     "ret\n");
 
-void atomic_sub_u32(unsigned *ptr, unsigned value);
+void atomic_sub_unsigned(unsigned *ptr, unsigned value);
 __asm(
     ".section .text\n"
-    ".local atomic_sub_u32\n"
-    "atomic_sub_u32 :\n"
+    ".local atomic_sub_unsigned\n"
+    "atomic_sub_unsigned :\n"
     "endbr64\n"
     "lock sub %esi,(%rdi)\n"
     "ret\n");
@@ -398,11 +431,11 @@ long sync_execute(struct Sync *sync, struct io_uring_sqe sqe) {
 	cq_head = *sync->cq_head;
 	sync->sq_array[index] = index;
 	sync->sqes[index] = sqe;
-	atomic_add_u32(sync->sq_tail, 1);
+	atomic_add_unsigned(sync->sq_tail, 1);
 	ret = io_uring_enter2(sync->ring_fd, 1, 1, 1, 0, 0);
 
 	if (ret < 0)
-		atomic_sub_u32(sync->sq_tail, 1);
+		atomic_sub_unsigned(sync->sq_tail, 1);
 	else {
 		idx = cq_head & cq_mask;
 		result = sync->cqes[idx].res;
@@ -412,7 +445,7 @@ long sync_execute(struct Sync *sync, struct io_uring_sqe sqe) {
 		} else
 			ret = result;
 
-		atomic_add_u32(sync->cq_head, 1);
+		atomic_add_unsigned(sync->cq_head, 1);
 	}
 
 	if (ret < 0) return -1;
@@ -436,7 +469,7 @@ int pwrite(int fd, void *buf, unsigned long len, unsigned long offset) {
 	return sync_execute(global_sync, sqe);
 }
 
-int open(const char *path, int flags, unsigned mode) {
+int open(char *path, int flags, unsigned mode) {
 	struct open_how how;
 	struct io_uring_sqe sqe;
 
@@ -456,15 +489,440 @@ int open(const char *path, int flags, unsigned mode) {
 	return sync_execute(global_sync, sqe);
 }
 
+int ftruncate(int fd, unsigned long len) {
+	struct io_uring_sqe sqe;
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.opcode = 55;
+	sqe.fd = fd;
+	sqe.off = len;
+	sqe.user_data = 1;
+
+	if (!global_sync)
+		if (sync_init(&global_sync) < 0) return -1;
+
+	return sync_execute(global_sync, sqe);
+}
+
+int statx(char *pathname, struct statx *st) {
+	struct io_uring_sqe sqe;
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.opcode = 21;
+	sqe.fd = -100;
+	sqe.addr = (unsigned long)pathname;
+	sqe.len = 2047;
+	sqe.off = (unsigned long)st;
+	sqe.user_data = 1;
+	if (!global_sync)
+		if (sync_init(&global_sync) < 0) return -1;
+	return sync_execute(global_sync, sqe);
+}
+
+int unlink(char *pathname) {
+	struct io_uring_sqe sqe;
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.opcode = 36;
+	sqe.fd = -100;
+	sqe.addr = (unsigned long)pathname;
+	sqe.user_data = 1;
+	if (!global_sync)
+		if (sync_init(&global_sync) < 0) return -1;
+	return sync_execute(global_sync, sqe);
+}
+
+void panic(char *msg) {
+	pwrite(2, msg, strlen(msg), 0);
+	pwrite(2, "\n", 1, 0);
+	exit_group(-1);
+}
+
+void puts(int fd, char *msg) { pwrite(fd, msg, strlen(msg), 0); }
+void putc(int fd, char ch) {
+	char buf[1];
+	buf[0] = ch;
+	pwrite(fd, buf, 1, 0);
+}
+
+int write_num(int fd, unsigned long num) {
+	char buf[21];
+	char *p;
+	unsigned long len;
+	long written;
+	if (fd < 0) return -1;
+	p = buf + sizeof(buf) - 1;
+	*p = '\0';
+
+	if (num == 0)
+		*--p = '0';
+	else {
+	begin:
+		if (num <= 0) goto end;
+		*--p = '0' + (num % 10);
+		num = num / 10;
+		goto begin;
+	}
+end:
+
+	len = buf + sizeof(buf) - 1 - p;
+	written = pwrite(fd, p, len, 0);
+	if (written < 0) return -1;
+	if ((unsigned long)written != len) return -1;
+	return 0;
+}
+
+void *map(unsigned long length) {
+	void *v = mmap(0, length, 3, 34, -1, 0);
+	if (v == (void *)-1) return 0;
+	return v;
+}
+
+void *fmap(int fd, unsigned long size, unsigned long offset) {
+	void *v = mmap(0, size, 3, 1, fd, offset);
+	if (v == (void *)-1) return 0;
+	return v;
+}
+
+void *fmap_ro(int fd, unsigned long size, unsigned long offset) {
+	void *v = mmap(0, size, 1, 1, fd, offset);
+	if (v == (void *)-1) return 0;
+	return v;
+}
+
+int lexer_skip_whitespace(struct lexer *l) {
+	char c;
+begin:
+	if (l->off >= l->len) return 0;
+	c = l->in[l->off];
+	if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' ||
+	    c == '\f') {
+		l->off++;
+		goto begin;
+	}
+
+	if (c == '/' && l->off + 1 < l->len && l->in[l->off + 1] == '*') {
+		l->off += 2;
+
+	comment_body:
+		if (l->off >= l->len) return -1;
+
+		if (l->in[l->off] == '*' && l->off + 1 < l->len &&
+		    l->in[l->off + 1] == '/') {
+			l->off += 2;
+			goto begin;
+		}
+
+		l->off++;
+		goto comment_body;
+	}
+
+	return 0;
+}
+
+enum TokenType lexer_read_ident(struct lexer *l) {
+begin:
+	if (!(l->off < l->len &&
+	      ((l->in[l->off] >= 'a' && l->in[l->off] <= 'z') ||
+	       (l->in[l->off] >= 'A' && l->in[l->off] <= 'Z') ||
+	       l->in[l->off] == '_' ||
+	       (l->in[l->off] >= '0' && l->in[l->off] <= '9'))))
+		goto end;
+	l->off++;
+	goto begin;
+end:
+	return Ident;
+}
+
+enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
+	if (l->off >= l->len) return Term;
+	if (lexer_skip_whitespace(l) < 0) return TokenError;
+	*start = l->off;
+	if (l->in[l->off] == '\"') {
+		l->off++;
+	begin_strlit:
+		if (l->off >= l->len ||
+		    (l->in[l->off] == '\n' && l->in[l->off - 1] != '\\'))
+			return TokenError;
+		if (l->in[l->off] == '\"') goto end_strlit;
+		l->off++;
+		goto begin_strlit;
+	end_strlit:
+		l->off++;
+		return StringLit;
+	} else if (l->in[l->off] == '\'') {
+		if (l->off + 2 < l->len) return TokenError;
+		if (l->in[l->off + 1] == '\\' && l->off + 3 < l->len)
+			return TokenError;
+
+		if (l->in[l->off + 1] == '\\')
+			l->off += 4;
+		else
+			l->off += 3;
+		if (l->in[l->off - 1] != '\'') return TokenError;
+		return CharLit;
+	} else if (l->in[l->off] == '(') {
+		l->off++;
+		return LeftParenPunct;
+	} else if (l->in[l->off] == ')') {
+		l->off++;
+		return RightParenPunct;
+	} else if (l->in[l->off] == '+') {
+		if (l->off + 1 < l->len && l->in[l->off + 1] == '+') {
+			l->off += 2;
+			return IncrPunct;
+		} else if (l->off + 1 < l->len && l->in[l->off + 1] == '=') {
+			l->off += 2;
+			return EqualIncrPunct;
+		} else {
+			l->off++;
+			return PlusPunct;
+		}
+	} else if (l->in[l->off] == '.') {
+		l->off++;
+		return DotPunct;
+	} else if (l->in[l->off] == '{') {
+		l->off++;
+		return LeftBracePunct;
+	} else if (l->in[l->off] == '}') {
+		l->off++;
+		return RightBracePunct;
+	} else if (l->in[l->off] == '[') {
+		l->off++;
+		return LeftBracketPunct;
+	} else if (l->in[l->off] == ']') {
+		l->off++;
+		return RightBracketPunct;
+	} else if (l->in[l->off] == ';') {
+		l->off++;
+		return SemiPunct;
+	} else if (l->in[l->off] == '=') {
+		if (l->off + 1 < l->len && l->in[l->off + 1] == '=') {
+			l->off += 2;
+			return DoubleEqualPunct;
+		} else {
+			l->off++;
+			return EqualPunct;
+		}
+	} else if (l->in[l->off] == '>') {
+		if (l->off + 1 < l->len && l->in[l->off + 1] == '=') {
+			l->off += 2;
+			return GreaterThanEqualPunct;
+		} else {
+			l->off++;
+			return GreaterThanPunct;
+		}
+	} else if (l->in[l->off] == '<') {
+		if (l->off + 1 < l->len && l->in[l->off + 1] == '=') {
+			l->off += 2;
+			return LessThanEqualPunct;
+		} else {
+			l->off++;
+			return LessThanPunct;
+		}
+	} else if (l->in[l->off] == '*') {
+		l->off++;
+		return AsteriskPunct;
+	} else if (l->in[l->off] == '&') {
+		if (l->off + 1 < l->len && l->in[l->off + 1] == '&') {
+			l->off += 2;
+			return LogicalAndPunct;
+		} else {
+			l->off++;
+			return AmpersandPunct;
+		}
+	} else if (l->in[l->off] == '|') {
+		if (l->off + 1 < l->len && l->in[l->off + 1] == '|') {
+			l->off += 2;
+			return LogicalOrPunct;
+		} else {
+			l->off++;
+			return PipePunct;
+		}
+	} else if (l->in[l->off] == ',') {
+		l->off++;
+		return CommaPunct;
+	} else if (l->in[l->off] == ':') {
+		l->off++;
+		return ColonPunct;
+	} else if (l->in[l->off] == '/') {
+		l->off++;
+		return DivPunct;
+	} else if (l->in[l->off] == '%') {
+		l->off++;
+		return PercentPunct;
+	} else if (l->in[l->off] == '!') {
+		if (l->off + 1 < l->len && l->in[l->off + 1] == '=') {
+			l->off += 2;
+			return NotEqualPunct;
+		} else {
+			l->off++;
+			return BangPunct;
+		}
+	} else if (l->in[l->off] == '-') {
+		if (l->off + 1 < l->len && l->in[l->off + 1] == '+') {
+			l->off += 2;
+			return DecrPunct;
+		} else if (l->off + 1 < l->len && l->in[l->off + 1] == '=') {
+			l->off += 2;
+			return EqualDecrPunct;
+		} else if (l->off + 1 < l->len && l->in[l->off + 1] == '>') {
+			l->off += 2;
+			return ArrowPunct;
+		} else {
+			l->off++;
+			return MinusPunct;
+		}
+	} else if (l->in[l->off] == '_') {
+		if (l->off + 4 < l->len && l->in[l->off + 1] == '_' &&
+		    l->in[l->off + 2] == 'a' && l->in[l->off + 3] == 's' &&
+		    l->in[l->off + 4] == 'm') {
+			l->off += 5;
+			return AsmReserved;
+		} else
+			return lexer_read_ident(l);
+	} else if (l->in[l->off] == 'c') {
+		if (l->off + 3 < l->len && l->in[l->off + 1] == 'h' &&
+		    l->in[l->off + 2] == 'a' && l->in[l->off + 3] == 'r') {
+			l->off += 4;
+			return CharReserved;
+		} else
+			return lexer_read_ident(l);
+	} else if (l->in[l->off] == 'v') {
+		if (l->off + 3 < l->len && l->in[l->off + 1] == 'o' &&
+		    l->in[l->off + 2] == 'i' && l->in[l->off + 3] == 'd') {
+			l->off += 4;
+			return VoidReserved;
+		} else
+			return lexer_read_ident(l);
+	} else if (l->in[l->off] == 'l') {
+		if (l->off + 3 < l->len && l->in[l->off + 1] == 'o' &&
+		    l->in[l->off + 2] == 'n' && l->in[l->off + 3] == 'g') {
+			l->off += 4;
+			return LongReserved;
+		} else
+			return lexer_read_ident(l);
+	} else if (l->in[l->off] == 'u') {
+		if (l->off + 7 < l->len && l->in[l->off + 1] == 'n' &&
+		    l->in[l->off + 2] == 's' && l->in[l->off + 3] == 'i' &&
+		    l->in[l->off + 4] == 'g' && l->in[l->off + 5] == 'n' &&
+		    l->in[l->off + 6] == 'e' && l->in[l->off + 7] == 'd') {
+			l->off += 8;
+			return UnsignedReserved;
+		} else
+			return lexer_read_ident(l);
+	} else if (l->in[l->off] == 'e') {
+		if (l->off + 3 < l->len && l->in[l->off + 1] == 'l' &&
+		    l->in[l->off + 2] == 's' && l->in[l->off + 3] == 'e') {
+			l->off += 4;
+			return ElseReserved;
+		} else if (l->off + 3 < l->len && l->in[l->off + 1] == 'n' &&
+			   l->in[l->off + 2] == 'u' &&
+			   l->in[l->off + 3] == 'm') {
+			l->off += 4;
+			return EnumReserved;
+		} else
+			return lexer_read_ident(l);
+	} else if (l->in[l->off] == 'g') {
+		if (l->off + 3 < l->len && l->in[l->off + 1] == 'o' &&
+		    l->in[l->off + 2] == 't' && l->in[l->off + 3] == 'o') {
+			l->off += 4;
+			return GotoReserved;
+		} else
+			return lexer_read_ident(l);
+	} else if (l->in[l->off] == 's') {
+		if (l->off + 4 < l->len && l->in[l->off + 1] == 'h' &&
+		    l->in[l->off + 2] == 'o' && l->in[l->off + 3] == 'r' &&
+		    l->in[l->off + 4] == 't') {
+			l->off += 5;
+			return ShortReserved;
+		} else if (l->off + 5 < l->len && l->in[l->off + 1] == 't' &&
+			   l->in[l->off + 2] == 'r' &&
+			   l->in[l->off + 3] == 'u' &&
+			   l->in[l->off + 4] == 'c' &&
+			   l->in[l->off + 5] == 't') {
+			l->off += 6;
+			return StructReserved;
+		} else if (l->off + 5 < l->len && l->in[l->off + 1] == 'i' &&
+			   l->in[l->off + 2] == 'z' &&
+			   l->in[l->off + 3] == 'e' &&
+			   l->in[l->off + 4] == 'o' &&
+			   l->in[l->off + 5] == 'f') {
+			l->off += 6;
+			return SizeOfReserved;
+		} else
+			return lexer_read_ident(l);
+	} else if (l->in[l->off] == 'i') {
+		if (l->off + 1 < l->len && l->in[l->off + 1] == 'f') {
+			l->off += 2;
+			return IfReserved;
+		} else if (l->off + 2 < l->len && l->in[l->off + 1] == 'n' &&
+			   l->in[l->off + 2] == 't') {
+			l->off += 3;
+			return IntReserved;
+		} else
+			return lexer_read_ident(l);
+	} else if (l->in[l->off] == 'r') {
+		if (l->off + 5 < l->len && l->in[l->off + 1] == 'e' &&
+		    l->in[l->off + 2] == 't' && l->in[l->off + 3] == 'u' &&
+		    l->in[l->off + 4] == 'r' && l->in[l->off + 5] == 'n') {
+			l->off += 6;
+			return ReturnReserved;
+		} else
+			return lexer_read_ident(l);
+	} else if (l->in[l->off] >= '0' && l->in[l->off] <= '9') {
+	number_begin:
+		l->off++;
+		if (l->off >= l->len || l->in[l->off] < '0' ||
+		    l->in[l->off] > '9')
+			goto number_end;
+		goto number_begin;
+	number_end:
+		return NumberLit;
+	} else if ((l->in[l->off] >= 'a' && l->in[l->off] <= 'z') ||
+		   (l->in[l->off] >= 'A' && l->in[l->off] <= 'Z') ||
+		   l->in[l->off] == '_') {
+		return lexer_read_ident(l);
+	}
+
+	if (l->off < l->len) {
+		l->off++;
+		return TokenError;
+	}
+
+	return Term;
+}
+
 int main(int argc, char **argv, char **envp) {
+	unsigned long start;
+	int fd;
+	struct statx st;
+	struct lexer l;
+	enum TokenType t;
 	global_sync = 0;
 	errno = 0;
-	if (!argv || !envp || !argc) {
-		pwrite(2, "err!\n", 5, 0);
-		exit_group(-1);
+	if (!argv || !envp || argc != 2) panic("Usage: famc <input_file>");
+
+	if ((fd = open(argv[1], 0, 0)) < 0) panic("No such file!");
+	if (statx(argv[1], &st) < 0) panic("Could not stat input file!");
+
+	l.in = fmap_ro(fd, st.stx_size, 0);
+	if (!l.in) panic("mmap fail!");
+
+	l.len = st.stx_size;
+	l.off = 0;
+
+	puts(2, "output file: ");
+	pwrite(2, l.in, st.stx_size, 0);
+
+	while ((t = lexer_next_token(&l, &start)) != Term) {
+		write_num(2, start);
+		puts(2, ": ");
+		write_num(2, t);
+		puts(2, "\n");
 	}
-	pwrite(2, "hello world!\n", 13, 0);
-	return argc;
+
+	close(fd);
+	munmap(l.in, st.stx_size);
+	return 0;
 }
 
 __asm(
