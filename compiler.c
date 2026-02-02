@@ -77,13 +77,46 @@ enum TokenType {
 struct lexer {
 	char *in;
 	unsigned long off;
+	unsigned long line_num;
+	unsigned long col_start;
 	unsigned long len;
 };
 
-struct token {
-	char *token;
-	long len;
-	int type;
+enum node_kind {
+	NodeIntLiteral,
+	NodeStringLiteral,
+	NodeIf,
+	NodeIdent,
+	NodeBinaryExpr
+};
+
+enum binary_kind_op { BinOpAdd, BinOpSub, BinOpMul, BinOpDiv, BinOpMod };
+
+struct source_location {
+	unsigned long off;
+	unsigned long line_num;
+	unsigned long column_num;
+};
+
+struct node {
+	enum node_kind kind;
+	struct source_location src_loc;
+	void *data;
+};
+
+struct int_literal_data {
+	unsigned long value;
+};
+
+struct string_literal {
+	char *value;
+	unsigned long len;
+};
+
+struct binary_expr {
+	struct node *left;
+	struct node *right;
+	enum binary_kind_op op;
 };
 
 struct statx_timestamp {
@@ -237,6 +270,19 @@ end:
 	return dest;
 }
 
+void *memmove(void *dest, const void *src, unsigned long n) {
+	char *d = (void *)((char *)dest + n);
+	char *s = (void *)((char *)src + n);
+begin:
+	if (n-- == 0) goto end;
+	d--;
+	s--;
+	*d = *s;
+	goto begin;
+end:
+	return dest;
+}
+
 unsigned long strlen(char *x) {
 	char *y = x;
 begin:
@@ -251,9 +297,7 @@ long raw_syscall(long sysno, long a0, long a1, long a2, long a3, long a4,
 		 long a5);
 __asm(
     ".section .text\n"
-    ".local raw_syscall\n"
     "raw_syscall:\n"
-    "endbr64\n"
     "mov    %rdi,%rax\n"
     "mov    %r8,%r10\n"
     "mov    %rsi,%rdi\n"
@@ -405,18 +449,14 @@ int sync_init(struct Sync **s) {
 void atomic_add_unsigned(unsigned *ptr, unsigned value);
 __asm(
     ".section .text\n"
-    ".local atomic_add_unsigned\n"
     "atomic_add_unsigned :\n"
-    "endbr64\n"
     "lock add %esi,(%rdi)\n"
     "ret\n");
 
 void atomic_sub_unsigned(unsigned *ptr, unsigned value);
 __asm(
     ".section .text\n"
-    ".local atomic_sub_unsigned\n"
     "atomic_sub_unsigned :\n"
-    "endbr64\n"
     "lock sub %esi,(%rdi)\n"
     "ret\n");
 
@@ -595,6 +635,10 @@ begin:
 	c = l->in[l->off];
 	if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' ||
 	    c == '\f') {
+		if (l->in[l->off] == '\n') {
+			l->col_start = l->off + 1;
+			l->line_num++;
+		}
 		l->off++;
 		goto begin;
 	}
@@ -610,7 +654,10 @@ begin:
 			l->off += 2;
 			goto begin;
 		}
-
+		if (l->in[l->off] == '\n') {
+			l->col_start = l->off + 1;
+			l->line_num++;
+		}
 		l->off++;
 		goto comment_body;
 	}
@@ -625,6 +672,11 @@ begin:
 			l->off += 6;
 			goto begin;
 		}
+		if (l->in[l->off] == '\n') {
+			l->col_start = l->off + 1;
+			l->line_num++;
+		}
+
 		l->off++;
 		goto preproc_body;
 	}
@@ -660,21 +712,36 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 		    (l->in[l->off] == '\n' && l->in[l->off - 1] != '\\'))
 			return TokenError;
 		if (l->in[l->off] == '\"') goto end_strlit;
+		if (l->in[l->off] == '\n') {
+			l->col_start = l->off + 1;
+			l->line_num++;
+		}
+
 		l->off++;
 		goto begin_strlit;
 	end_strlit:
 		l->off++;
 		return StringLit;
 	} else if (l->in[l->off] == '\'') {
-		if (l->off + 2 < l->len) return TokenError;
+		if (l->off + 2 < l->len) {
+			l->off++;
+			return TokenError;
+		}
 		if (l->in[l->off + 1] == '\\' && l->off + 3 < l->len)
 			return TokenError;
+		if (l->in[l->off + 1] == '\n') {
+			l->col_start = l->off + 1;
+			l->line_num++;
+			l->off++;
+			return TokenError;
+		}
 
 		if (l->in[l->off + 1] == '\\')
 			l->off += 4;
 		else
 			l->off += 3;
-		if (l->in[l->off - 1] != '\'') return TokenError;
+		if (l->in[l->off - 1] != '\'' || l->in[l->off - 2] == '\n')
+			return TokenError;
 		return CharLit;
 	} else if (l->in[l->off] == '(') {
 		l->off++;
@@ -1041,17 +1108,25 @@ int main(int argc, char **argv, char **envp) {
 	if (!l.in) panic("mmap fail!");
 
 	l.len = st.stx_size;
-	l.off = 0;
+	l.line_num = l.col_start = l.off = 0;
 
 	puts(2, "output file: ");
 	pwrite(2, l.in, st.stx_size, 0);
 
-	while ((t = lexer_next_token(&l, &start)) != Term) {
-		write_num(2, start);
-		puts(2, ": ");
-		write_num(2, t);
-		puts(2, "\n");
-	}
+begin:
+	t = lexer_next_token(&l, &start);
+	if (t == Term) goto end;
+	puts(2, "start=");
+	write_num(2, start);
+	puts(2, ",type=");
+	write_num(2, t);
+	puts(2, ",lineno=");
+	write_num(2, l.line_num + 1);
+	puts(2, ",col=");
+	write_num(2, start - l.col_start);
+	puts(2, "\n");
+	goto begin;
+end:
 
 	close(fd);
 	munmap(l.in, st.stx_size);
