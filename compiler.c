@@ -775,6 +775,13 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 		if (l->off + 4 < l->len && l->in[l->off + 1] == '_' &&
 		    l->in[l->off + 2] == 'a' && l->in[l->off + 3] == 's' &&
 		    l->in[l->off + 4] == 'm') {
+			if (l->off + 5 < l->len) {
+				char ch = l->in[l->off + 5];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
 			l->off += 5;
 			return AsmReserved;
 		} else
@@ -782,6 +789,14 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 	} else if (l->in[l->off] == 'c') {
 		if (l->off + 3 < l->len && l->in[l->off + 1] == 'h' &&
 		    l->in[l->off + 2] == 'a' && l->in[l->off + 3] == 'r') {
+			if (l->off + 4 < l->len) {
+				char ch = l->in[l->off + 4];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 4;
 			return CharReserved;
 		} else
@@ -789,6 +804,14 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 	} else if (l->in[l->off] == 'v') {
 		if (l->off + 3 < l->len && l->in[l->off + 1] == 'o' &&
 		    l->in[l->off + 2] == 'i' && l->in[l->off + 3] == 'd') {
+			if (l->off + 4 < l->len) {
+				char ch = l->in[l->off + 4];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 4;
 			return VoidReserved;
 		} else
@@ -796,6 +819,14 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 	} else if (l->in[l->off] == 'l') {
 		if (l->off + 3 < l->len && l->in[l->off + 1] == 'o' &&
 		    l->in[l->off + 2] == 'n' && l->in[l->off + 3] == 'g') {
+			if (l->off + 4 < l->len) {
+				char ch = l->in[l->off + 4];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 4;
 			return LongReserved;
 		} else
@@ -805,6 +836,14 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 		    l->in[l->off + 2] == 's' && l->in[l->off + 3] == 'i' &&
 		    l->in[l->off + 4] == 'g' && l->in[l->off + 5] == 'n' &&
 		    l->in[l->off + 6] == 'e' && l->in[l->off + 7] == 'd') {
+			if (l->off + 8 < l->len) {
+				char ch = l->in[l->off + 8];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 8;
 			return UnsignedReserved;
 		} else
@@ -812,11 +851,27 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 	} else if (l->in[l->off] == 'e') {
 		if (l->off + 3 < l->len && l->in[l->off + 1] == 'l' &&
 		    l->in[l->off + 2] == 's' && l->in[l->off + 3] == 'e') {
+			if (l->off + 4 < l->len) {
+				char ch = l->in[l->off + 4];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 4;
 			return ElseReserved;
 		} else if (l->off + 3 < l->len && l->in[l->off + 1] == 'n' &&
 			   l->in[l->off + 2] == 'u' &&
 			   l->in[l->off + 3] == 'm') {
+			if (l->off + 4 < l->len) {
+				char ch = l->in[l->off + 4];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 4;
 			return EnumReserved;
 		} else
@@ -824,6 +879,14 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 	} else if (l->in[l->off] == 'g') {
 		if (l->off + 3 < l->len && l->in[l->off + 1] == 'o' &&
 		    l->in[l->off + 2] == 't' && l->in[l->off + 3] == 'o') {
+			if (l->off + 4 < l->len) {
+				char ch = l->in[l->off + 4];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 4;
 			return GotoReserved;
 		} else
@@ -832,6 +895,14 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 		if (l->off + 4 < l->len && l->in[l->off + 1] == 'h' &&
 		    l->in[l->off + 2] == 'o' && l->in[l->off + 3] == 'r' &&
 		    l->in[l->off + 4] == 't') {
+			if (l->off + 5 < l->len) {
+				char ch = l->in[l->off + 5];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 5;
 			return ShortReserved;
 		} else if (l->off + 5 < l->len && l->in[l->off + 1] == 't' &&
@@ -839,6 +910,14 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 			   l->in[l->off + 3] == 'u' &&
 			   l->in[l->off + 4] == 'c' &&
 			   l->in[l->off + 5] == 't') {
+			if (l->off + 6 < l->len) {
+				char ch = l->in[l->off + 6];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 6;
 			return StructReserved;
 		} else if (l->off + 5 < l->len && l->in[l->off + 1] == 'i' &&
@@ -846,16 +925,40 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 			   l->in[l->off + 3] == 'e' &&
 			   l->in[l->off + 4] == 'o' &&
 			   l->in[l->off + 5] == 'f') {
+			if (l->off + 6 < l->len) {
+				char ch = l->in[l->off + 6];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 6;
 			return SizeOfReserved;
 		} else
 			return lexer_read_ident(l);
 	} else if (l->in[l->off] == 'i') {
 		if (l->off + 1 < l->len && l->in[l->off + 1] == 'f') {
+			if (l->off + 2 < l->len) {
+				char ch = l->in[l->off + 2];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 2;
 			return IfReserved;
 		} else if (l->off + 2 < l->len && l->in[l->off + 1] == 'n' &&
 			   l->in[l->off + 2] == 't') {
+			if (l->off + 3 < l->len) {
+				char ch = l->in[l->off + 3];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 3;
 			return IntReserved;
 		} else
@@ -864,6 +967,14 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 		if (l->off + 5 < l->len && l->in[l->off + 1] == 'e' &&
 		    l->in[l->off + 2] == 't' && l->in[l->off + 3] == 'u' &&
 		    l->in[l->off + 4] == 'r' && l->in[l->off + 5] == 'n') {
+			if (l->off + 6 < l->len) {
+				char ch = l->in[l->off + 6];
+				if ((ch >= 'A' && ch <= 'Z') ||
+				    (ch >= 'a' && ch <= 'z') ||
+				    (ch >= '0' && ch <= '9') || ch == '_')
+					return lexer_read_ident(l);
+			}
+
 			l->off += 6;
 			return ReturnReserved;
 		} else
@@ -872,8 +983,13 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 	number_begin:
 		l->off++;
 		if (l->off >= l->len || l->in[l->off] < '0' ||
-		    l->in[l->off] > '9')
+		    l->in[l->off] > '9') {
+			char ch = l->in[l->off];
+			if ((ch >= 'A' && ch <= 'Z') ||
+			    (ch >= 'a' && ch <= 'z') || ch == '_')
+				return TokenError;
 			goto number_end;
+		}
 		goto number_begin;
 	number_end:
 		return NumberLit;
