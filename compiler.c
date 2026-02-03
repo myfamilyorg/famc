@@ -122,7 +122,9 @@ enum node_kind {
 	NodeStructType,
 	NodeEnumType,
 	NodeAsm,
-	NodeAssign
+	NodeAssign,
+	NodeType,
+	NodeName
 };
 
 enum unary_kind_op { UnOpNeg, UnOpNot, UnOpAddr };
@@ -143,18 +145,9 @@ enum binary_kind_op {
 
 enum assign_op_kind { AssignSimple, AssignAdd, AssignSub };
 
-struct asm_data {
-	char **lines;
-	unsigned long count;
-};
-
-struct assign_data {
-	struct node *lhs;
-	struct node *rhs;
-	enum assign_op_kind op;
-};
-
 struct source_location {
+	enum TokenType t;
+	unsigned length;
 	unsigned long off;
 	unsigned long line_num;
 	unsigned long column_num;
@@ -164,6 +157,35 @@ struct node {
 	enum node_kind kind;
 	struct source_location src_loc;
 	void *data;
+	struct node *parent;
+};
+
+struct ident_data {
+	char *name;
+	int len;
+};
+
+enum type_kind { TypeStruct, TypeEnum, TypePrimitive };
+
+struct name_data {
+	char *name;
+	int len;
+};
+
+struct type_data {
+	enum type_kind kind;
+	struct node *type_name;
+};
+
+struct asm_data {
+	char **lines;
+	unsigned long count;
+};
+
+struct assign_data {
+	struct node *lhs;
+	struct node *rhs;
+	enum assign_op_kind op;
 };
 
 struct int_literal_data {
@@ -442,7 +464,7 @@ end:
 	return dest;
 }
 
-void *memmove(void *dest, const void *src, unsigned long n) {
+void *memmove(void *dest, void *src, unsigned long n) {
 	char *d = (void *)((char *)dest + n);
 	char *s = (void *)((char *)src + n);
 begin:
@@ -1306,12 +1328,266 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 	return Term;
 }
 
-int parse(const char *source, unsigned long len, struct node **root_out,
-	  struct arena *a) {
-	(void)source;
-	(void)len;
-	(void)root_out;
+int reduce_block_base_left_paren(char *src, struct source_location stack[10000],
+				 int *stack_pointer, struct node *root,
+				 struct node **cur, struct arena *a) {
+	struct block_data *bd;
+	write_num(2, (unsigned long)(*cur)->parent);
+	write_str(2, "\n");
+	write_num(2, (unsigned long)(*cur)->data);
+
+	write_str(2, "\n");
+
+	if (*stack_pointer != 3) return -1;
+
+	bd = (*cur)->data;
+	if (!bd->stmts)
+		bd->stmts = map(sizeof(void *) * 512);
+	else if (bd->count % 512 == 0) {
+		void *tmp = map(sizeof(void *) * (bd->count + 512));
+		if (!tmp) return -1;
+		memcpy(tmp, bd->stmts, bd->count * sizeof(void *));
+		munmap(bd->stmts, sizeof(void *) * bd->count);
+		bd->stmts = tmp;
+	}
+	bd->stmts[bd->count] = arena_alloc(a, sizeof(struct node));
+	if (!bd->stmts[bd->count]) return -1;
+	bd->stmts[bd->count]->kind = NodeFuncDecl;
+	bd->stmts[bd->count]->parent = *cur;
+	bd->stmts[bd->count]->src_loc = stack[0];
+	bd->stmts[bd->count]->data =
+	    arena_alloc(a, sizeof(struct func_decl_data));
+	if (!bd->stmts[bd->count]->data) return -1;
+	((struct func_decl_data *)(bd->stmts[bd->count]->data))->name =
+	    arena_alloc(a, sizeof(struct node));
+	if (!((struct func_decl_data *)(bd->stmts[bd->count]->data))->name)
+		return -1;
+	((struct func_decl_data *)(bd->stmts[bd->count]->data))->name->kind =
+	    NodeIdent;
+	((struct func_decl_data *)(bd->stmts[bd->count]->data))->name->data =
+	    arena_alloc(a, sizeof(struct ident_data));
+	if (!((struct func_decl_data *)(bd->stmts[bd->count]->data))
+		 ->name->data)
+		return -1;
+	((struct ident_data *)(((struct func_decl_data *)(bd->stmts[bd->count]
+							      ->data))
+				   ->name->data))
+	    ->name = src + stack[1].off;
+	((struct ident_data *)(((struct func_decl_data *)(bd->stmts[bd->count]
+							      ->data))
+				   ->name->data))
+	    ->len = stack[1].length;
+	((struct func_decl_data *)(bd->stmts[bd->count]->data))->params = 0;
+	((struct func_decl_data *)(bd->stmts[bd->count]->data))->param_count =
+	    0;
+	((struct func_decl_data *)(bd->stmts[bd->count]->data))->body = 0;
+
+	((struct func_decl_data *)(bd->stmts[bd->count]->data))->return_type =
+	    arena_alloc(a, sizeof(struct node));
+	if (!((struct func_decl_data *)(bd->stmts[bd->count]->data))
+		 ->return_type)
+		return -1;
+
+	((struct func_decl_data *)(bd->stmts[bd->count]->data))
+	    ->return_type->kind = NodeType;
+	((struct func_decl_data *)(bd->stmts[bd->count]->data))
+	    ->return_type->data = arena_alloc(a, sizeof(struct type_data));
+	if (!((struct func_decl_data *)(bd->stmts[bd->count]->data))
+		 ->return_type->data)
+		return -1;
+	((struct type_data *)(((struct func_decl_data *)(bd->stmts[bd->count]
+							     ->data))
+				  ->return_type->data))
+	    ->kind = TypePrimitive;
+	((struct type_data *)(((struct func_decl_data *)(bd->stmts[bd->count]
+							     ->data))
+				  ->return_type->data))
+	    ->type_name = arena_alloc(a, sizeof(struct name_data));
+	if (!((struct type_data
+		   *)(((struct func_decl_data *)(bd->stmts[bd->count]->data))
+			  ->return_type->data))
+		 ->type_name)
+		return -1;
+	/*
+	 (((struct type_data *)(((struct func_decl_data *)(bd->stmts[bd->count]
+							      ->data))
+				   ->return_type->data))
+	     ->type_name)->data = arena_alloc(a, sizeof(struct name_data);
+
+	(((struct type_data *)(((struct func_decl_data *)(bd->stmts[bd->count]
+							      ->data))
+				   ->return_type->data))
+	     ->type_name)
+	    ->name = 0;
+	    */
+
+	bd->count++;
+
+	(void)src;
+	(void)stack;
+	(void)stack_pointer;
+	(void)root;
+	(void)cur;
 	(void)a;
+	*stack_pointer = 0;
+	return 0;
+}
+
+int reduce_block_return(char *src, struct source_location stack[10000],
+			int *stack_pointer, struct node *root,
+			struct node **cur, struct arena *a) {
+	(void)src;
+	(void)stack;
+	(void)stack_pointer;
+	(void)root;
+	(void)cur;
+	(void)a;
+	return 0;
+}
+
+int reduce_block_right_brace(char *src, struct source_location stack[10000],
+			     int *stack_pointer, struct node *root,
+			     struct node **cur, struct arena *a) {
+	(void)src;
+	(void)stack;
+	(void)stack_pointer;
+	(void)root;
+	(void)cur;
+	(void)a;
+	return 0;
+}
+
+int reduce_block_base_error_check(char *src,
+				  struct source_location stack[10000],
+				  int *stack_pointer, struct node *root,
+				  struct node **cur, struct arena *a) {
+	(void)src;
+	(void)stack;
+	(void)stack_pointer;
+	(void)root;
+	(void)cur;
+	(void)a;
+	return 0;
+}
+
+int reduce_block_non_base_error_check(char *src,
+				      struct source_location stack[10000],
+				      int *stack_pointer, struct node *root,
+				      struct node **cur, struct arena *a) {
+	(void)src;
+	(void)stack;
+	(void)stack_pointer;
+	(void)root;
+	(void)cur;
+	(void)a;
+	return 0;
+}
+
+int reduce_block_non_base(char *src, struct source_location stack[10000],
+			  int *stack_pointer, struct node *root,
+			  struct node **cur, struct arena *a) {
+	int sym = *stack_pointer - 1;
+
+	write_str(2, "reducing block\n");
+
+	if (stack[sym].t == ReturnReserved) {
+		write_str(2, "===============found return==================\n");
+		return reduce_block_return(src, stack, stack_pointer, root, cur,
+					   a);
+	} else if (stack[sym].t == RightBracePunct) {
+		write_str(2, "==============found right brace=============\n");
+		return reduce_block_right_brace(src, stack, stack_pointer, root,
+						cur, a);
+	} else
+		return reduce_block_non_base_error_check(
+		    src, stack, stack_pointer, root, cur, a);
+}
+
+int reduce_block_base(char *src, struct source_location stack[10000],
+		      int *stack_pointer, struct node *root, struct node **cur,
+		      struct arena *a) {
+	int sym = *stack_pointer - 1;
+
+	write_str(2, "reducing base block\n");
+
+	if (stack[sym].t == LeftParenPunct) {
+		write_str(2, "===============found paren===================\n");
+		return reduce_block_base_left_paren(src, stack, stack_pointer,
+						    root, cur, a);
+	} else
+		return reduce_block_base_error_check(src, stack, stack_pointer,
+						     root, cur, a);
+}
+
+int reduce_stack(char *src, struct source_location stack[10000],
+		 int *stack_pointer, struct node *root, struct node **cur,
+		 struct arena *a) {
+	int sym = *stack_pointer - 1;
+	write_str(2, "reduce stack. sp=");
+	write_num(2, *stack_pointer);
+	write_str(2, ",token=");
+	write_str(2, TOKEN_NAMES[stack[sym].t]);
+	write_str(2, ",text='");
+	pwrite(2, src + stack[sym].off, stack[sym].length, -1);
+	write_str(2, "'\n");
+	if ((*cur)->kind == NodeBlock && !(*cur)->parent)
+		return reduce_block_base(src, stack, stack_pointer, root, cur,
+					 a);
+	else if ((*cur)->kind == NodeBlock)
+		return reduce_block_non_base(src, stack, stack_pointer, root,
+					     cur, a);
+	return -1;
+}
+
+int parse(char *src, unsigned long len, struct node **root_out,
+	  struct arena *a) {
+	struct node *root, *cur;
+	struct source_location stack[10000];
+	struct lexer l;
+	int stack_pointer;
+	unsigned long start;
+	enum TokenType t;
+
+	stack_pointer = 0;
+	root = arena_alloc(a, sizeof(struct node));
+	if (!root) return -1;
+	root->kind = NodeBlock;
+	root->src_loc.off = 0;
+	root->src_loc.line_num = 0;
+	root->src_loc.column_num = 0;
+	root->parent = 0;
+	root->data = arena_alloc(a, sizeof(struct block_data));
+	if (!root->data) return -1;
+	((struct block_data *)(root->data))->count = 0;
+	((struct block_data *)(root->data))->stmts = 0;
+	cur = root;
+
+	l.in = src;
+	l.len = len;
+	l.line_num = l.col_start = l.off = 0;
+
+begin:
+	t = lexer_next_token(&l, &start);
+
+	if (t == TokenError) panic("token error");
+	if (t == Term) goto end;
+	if (stack_pointer >= 10000) panic("stack overflow");
+
+	stack[stack_pointer].t = t;
+	stack[stack_pointer].line_num = l.line_num;
+	stack[stack_pointer].column_num = start - l.col_start;
+	stack[stack_pointer].off = start;
+	stack[stack_pointer].length = l.off - start;
+	stack_pointer++;
+
+	if (reduce_stack(src, stack, &stack_pointer, root, &cur, a) < 0)
+		return -1;
+
+	goto begin;
+end:
+
+	*root_out = root;
+
 	return 0;
 }
 
@@ -1319,6 +1595,9 @@ int main(int argc, char **argv, char **envp) {
 	int fd;
 	struct statx st;
 	struct lexer l;
+	struct node *root;
+	struct arena a;
+	char *in;
 #ifndef __famc__
 	unsigned long start;
 	enum TokenType t;
@@ -1331,13 +1610,14 @@ int main(int argc, char **argv, char **envp) {
 	if ((fd = open(argv[1], 0, 0)) < 0) panic("No such file!");
 	if (statx(argv[1], &st) < 0) panic("Could not stat input file!");
 
-	l.in = fmap_ro(fd, st.stx_size, 0);
-	if (!l.in) panic("mmap fail!");
+	in = fmap_ro(fd, st.stx_size, 0);
+	if (!in) panic("mmap fail!");
 
+#ifndef __famc__
+	l.in = in;
 	l.len = st.stx_size;
 	l.line_num = l.col_start = l.off = 0;
 
-#ifndef __famc__
 	if (argc > 2 && !strcmp(argv[2], "--debug_lexer")) {
 	begin:
 		t = lexer_next_token(&l, &start);
@@ -1359,8 +1639,16 @@ int main(int argc, char **argv, char **envp) {
 	}
 #endif /* __famc__ */
 
+	root = 0;
+	a.base = 0;
+	a.capacity = 0;
+	a.used = 0;
+
+	parse(in, st.stx_size, &root, &a);
+
 	close(fd);
 	munmap(l.in, st.stx_size);
+	arena_free(&a);
 	return 0;
 }
 
