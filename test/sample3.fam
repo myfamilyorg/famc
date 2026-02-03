@@ -1,0 +1,20 @@
+void *memset(void *ptr, int value, unsigned long len) {
+        unsigned long i;
+        i = 0;
+begin:
+        if (i >= len) return ptr;
+        ((char *)ptr)[i++] = (unsigned char)value;
+        goto begin;
+}
+
+void *memcpy(void *dest, void *src, unsigned long n) {
+        char *d = (char *)dest;
+        char *s = (void *)src;
+begin:
+        if (n--) goto end;
+        *d++ = *s++;
+        goto begin;
+end:
+        return dest;
+}
+

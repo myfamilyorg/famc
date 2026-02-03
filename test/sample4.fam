@@ -1,0 +1,19 @@
+long raw_syscall(long sysno, long a0, long a1, long a2, long a3, long a4,
+                 long a5);
+#ifndef __famc__
+#define __famc__
+#endif
+__asm(
+    ".section .text\n"
+    "raw_syscall:\n"
+    "mov    %rdi,%rax\n"
+    "mov    %r8,%r10\n"
+    "mov    %rsi,%rdi\n"
+    "mov    %r9,%r8\n"
+    "mov    %rdx,%rsi\n"
+    "mov    0x8(%rsp),%r9\n"
+    "mov    %rcx,%rdx\n"
+    "syscall\n"
+    "ret\n"
+    "xchg   %ax,%ax\n");
+
