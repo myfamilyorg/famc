@@ -285,6 +285,12 @@ struct array_type_data {
 	unsigned long size;
 };
 
+struct arena {
+	void *base;
+	unsigned long capacity;
+	unsigned long used;
+};
+
 struct statx_timestamp {
 	long tv_sec;
 	unsigned tv_nsec;
@@ -466,7 +472,9 @@ begin:
 	y++;
 	goto begin;
 end:
-	return *x > *y ? 1 : *y > *x ? -1 : 0;
+	if (*x > *y) return 1;
+	if (*y > *x) return -1;
+	return 0;
 }
 
 long raw_syscall(long sysno, long a0, long a1, long a2, long a3, long a4,
@@ -797,6 +805,42 @@ void *fmap_ro(int fd, unsigned long size, unsigned long offset) {
 	void *v = mmap(0, size, 1, 1, fd, offset);
 	if (v == (void *)-1) return 0;
 	return v;
+}
+
+void *arena_alloc(struct arena *a, unsigned long bytes) {
+	void *p;
+	if (a->used + bytes > a->capacity) {
+		unsigned long new_cap;
+		void *new_base;
+		if (a->capacity == 0)
+			new_cap = 128 * 1024;
+		else
+			new_cap = a->capacity * 2;
+		if (bytes + a->used > new_cap) return 0;
+
+		new_base = map(new_cap);
+		if (new_base == 0) return 0;
+
+		if (a->used > 0) {
+			memcpy(new_base, a->base, a->used);
+			munmap(a->base, a->capacity);
+		}
+
+		a->base = new_base;
+		a->capacity = new_cap;
+	}
+
+	p = (char *)a->base + a->used;
+	a->used += bytes;
+	return p;
+}
+
+void arena_free(struct arena *a) {
+	if (a->base) {
+		munmap(a->base, a->capacity);
+		a->base = 0;
+		a->capacity = a->used = 0;
+	}
 }
 
 int lexer_skip_whitespace(struct lexer *l) {
@@ -1262,6 +1306,15 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 	return Term;
 }
 
+int parse(const char *source, unsigned long len, struct node **root_out,
+	  struct arena *a) {
+	(void)source;
+	(void)len;
+	(void)root_out;
+	(void)a;
+	return 0;
+}
+
 int main(int argc, char **argv, char **envp) {
 	int fd;
 	struct statx st;
@@ -1301,8 +1354,9 @@ int main(int argc, char **argv, char **envp) {
 		pwrite(2, l.in + start, l.off - start, -1);
 		write_str(2, "'\n");
 		goto begin;
+	end:
+		return 0;
 	}
-end:
 #endif /* __famc__ */
 
 	close(fd);
