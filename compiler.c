@@ -74,6 +74,18 @@ enum TokenType {
 	TokenTypeLast
 };
 
+#ifndef __famc__
+char *TOKEN_NAMES[TokenTypeLast] = {
+    "Term", "StringLit", "CharLit",   "NumberLit", ";",	   "*",	    "&",
+    "|",    "]",	 "[",	      "}",	   "{",	   ")",	    "(",
+    ".",    "%",	 "/",	      ",",	   ":",	   "!",	    "!=",
+    "+=",   "-=",	 "++",	      "--",	   "=",	   "==",    ">=",
+    "<=",   ">",	 "<",	      "&&",	   "||",   "-",	    "+",
+    "->",   "sizeof",	 "goto",      "if",	   "else", "enum",  "struct",
+    "int",  "long",	 "unsigned",  "__asm__",   "char", "short", "return",
+    "void", "Ident",	 "TokenError"};
+#endif /* __famc__ */
+
 struct lexer {
 	char *in;
 	unsigned long off;
@@ -86,6 +98,7 @@ enum node_kind {
 	NodeIntLiteral,
 	NodeStringLiteral,
 	NodeIdent,
+	NodeUnaryExpr,
 	NodeBinaryExpr,
 	NodeIf,
 	NodeBlock,
@@ -111,6 +124,8 @@ enum node_kind {
 	NodeAsm,
 	NodeAssign
 };
+
+enum unary_kind_op { UnOpNeg, UnOpNot, UnOpAddr };
 
 enum binary_kind_op {
 	BinOpAdd,
@@ -183,6 +198,11 @@ struct goto_data {
 
 struct label_data {
 	struct node *name;
+};
+
+struct unary_expr_data {
+	struct node *operand;
+	enum unary_kind_op op;
 };
 
 struct binary_expr {
@@ -439,6 +459,16 @@ end:
 	return x - y;
 }
 
+int strcmp(char *x, char *y) {
+begin:
+	if (*x != *y || !*x) goto end;
+	x++;
+	y++;
+	goto begin;
+end:
+	return *x > *y ? 1 : *y > *x ? -1 : 0;
+}
+
 long raw_syscall(long sysno, long a0, long a1, long a2, long a3, long a4,
 		 long a5);
 __asm(
@@ -638,7 +668,7 @@ long sync_execute(struct Sync *sync, struct io_uring_sqe sqe) {
 	return ret;
 }
 
-int pwrite(int fd, void *buf, unsigned long len, unsigned long offset) {
+int pwrite(int fd, void *buf, unsigned long len, long offset) {
 	struct io_uring_sqe sqe;
 
 	memset(&sqe, 0, sizeof(sqe));
@@ -717,12 +747,12 @@ int unlink(char *pathname) {
 }
 
 void panic(char *msg) {
-	pwrite(2, msg, strlen(msg), 0);
-	pwrite(2, "\n", 1, 0);
+	pwrite(2, msg, strlen(msg), -1);
+	pwrite(2, "\n", 1, -1);
 	exit_group(-1);
 }
 
-int fdputs(int fd, char *msg) { return pwrite(fd, msg, strlen(msg), 0); }
+int write_str(int fd, char *msg) { return pwrite(fd, msg, strlen(msg), -1); }
 
 int write_num(int fd, unsigned long num) {
 	char buf[21];
@@ -745,10 +775,10 @@ int write_num(int fd, unsigned long num) {
 end:
 
 	len = buf + sizeof(buf) - 1 - p;
-	written = pwrite(fd, p, len, 0);
+	written = pwrite(fd, p, len, -1);
 	if (written < 0) return -1;
 	if ((unsigned long)written != len) return -1;
-	return 0;
+	return written;
 }
 
 void *map(unsigned long length) {
@@ -1233,14 +1263,17 @@ enum TokenType lexer_next_token(struct lexer *l, unsigned long *start) {
 }
 
 int main(int argc, char **argv, char **envp) {
-	unsigned long start;
 	int fd;
 	struct statx st;
 	struct lexer l;
+#ifndef __famc__
+	unsigned long start;
 	enum TokenType t;
+#endif /* __famc__ */
 	global_sync = 0;
 	errno = 0;
-	if (!argv || !envp || argc != 2) panic("Usage: famc <input_file>");
+	if (!argv || !envp || argc < 2)
+		panic("Usage: famc <input_file> <options>");
 
 	if ((fd = open(argv[1], 0, 0)) < 0) panic("No such file!");
 	if (statx(argv[1], &st) < 0) panic("Could not stat input file!");
@@ -1251,23 +1284,26 @@ int main(int argc, char **argv, char **envp) {
 	l.len = st.stx_size;
 	l.line_num = l.col_start = l.off = 0;
 
-	fdputs(2, "output file: ");
-	pwrite(2, l.in, st.stx_size, 0);
-
-begin:
-	t = lexer_next_token(&l, &start);
-	if (t == Term) goto end;
-	fdputs(2, "start=");
-	write_num(2, start);
-	fdputs(2, ",type=");
-	write_num(2, t);
-	fdputs(2, ",lineno=");
-	write_num(2, l.line_num + 1);
-	fdputs(2, ",col=");
-	write_num(2, start - l.col_start);
-	fdputs(2, "\n");
-	goto begin;
+#ifndef __famc__
+	if (argc > 2 && !strcmp(argv[2], "--debug_lexer")) {
+	begin:
+		t = lexer_next_token(&l, &start);
+		if (t == Term) goto end;
+		write_str(2, "start=");
+		write_num(2, start);
+		write_str(2, ",type='");
+		write_str(2, TOKEN_NAMES[t]);
+		write_str(2, "',lineno=");
+		write_num(2, l.line_num + 1);
+		write_str(2, ",col=");
+		write_num(2, start - l.col_start);
+		write_str(2, ",text='");
+		pwrite(2, l.in + start, l.off - start, -1);
+		write_str(2, "'\n");
+		goto begin;
+	}
 end:
+#endif /* __famc__ */
 
 	close(fd);
 	munmap(l.in, st.stx_size);

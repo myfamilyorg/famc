@@ -1,0 +1,7 @@
+void x(void) {
+}
+
+int main(int x) {
+	x();
+	return 4;
+}
