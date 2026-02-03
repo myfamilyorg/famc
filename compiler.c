@@ -85,12 +85,59 @@ struct lexer {
 enum node_kind {
 	NodeIntLiteral,
 	NodeStringLiteral,
-	NodeIf,
 	NodeIdent,
-	NodeBinaryExpr
+	NodeBinaryExpr,
+	NodeIf,
+	NodeBlock,
+	NodeGoto,
+	NodeDeref,
+	NodePostIncr,
+	NodeLabel,
+	NodeCast,
+	NodeReturn,
+	NodeVarDecl,
+	NodeFuncDecl,
+	NodeFuncProto,
+	NodeCall,
+	NodeStructDecl,
+	NodeMemberAccess,
+	NodeArraySubscript,
+	NodeEnumDecl,
+	NodeEnumeratorDecl,
+	NodePointerType,
+	NodeArrayType,
+	NodeStructType,
+	NodeEnumType,
+	NodeAsm,
+	NodeAssign
 };
 
-enum binary_kind_op { BinOpAdd, BinOpSub, BinOpMul, BinOpDiv, BinOpMod };
+enum binary_kind_op {
+	BinOpAdd,
+	BinOpSub,
+	BinOpMul,
+	BinOpDiv,
+	BinOpMod,
+	BinOpGE,
+	BinOpEQ,
+	BinOpNE,
+	BinOpLT,
+	BinOpLE,
+	BinOpGT
+};
+
+enum assign_op_kind { AssignSimple, AssignAdd, AssignSub };
+
+struct asm_data {
+	char **lines;
+	unsigned long count;
+};
+
+struct assign_data {
+	struct node *lhs;
+	struct node *rhs;
+	enum assign_op_kind op;
+};
 
 struct source_location {
 	unsigned long off;
@@ -113,10 +160,109 @@ struct string_literal {
 	unsigned long len;
 };
 
+struct cast_data {
+	struct node *type;
+	struct node *expr;
+};
+
+struct dereference_data {
+	struct node *expr;
+};
+
+struct post_increment_data {
+	struct node *expr;
+};
+
+struct post_decrement_data {
+	struct node *expr;
+};
+
+struct goto_data {
+	struct node *label;
+};
+
+struct label_data {
+	struct node *name;
+};
+
 struct binary_expr {
 	struct node *left;
 	struct node *right;
 	enum binary_kind_op op;
+};
+
+struct struct_type_data {
+	struct node *name;
+};
+
+struct enum_type_data {
+	struct node *name;
+};
+
+struct block_data {
+	struct node **stmts;
+	unsigned long count;
+};
+
+struct return_data {
+	struct node *expr;
+};
+
+struct var_decl_data {
+	struct node *type;
+	struct node *name;
+	struct node *init;
+};
+
+struct func_decl_data {
+	struct node *return_type;
+	struct node *name;
+	struct node **params;
+	unsigned long param_count;
+	struct node *body;
+};
+
+struct call_data {
+	struct node *callee;
+	struct node **args;
+	unsigned long arg_count;
+};
+
+struct struct_decl_data {
+	struct node *name;
+	struct node **fields;
+	unsigned long field_count;
+};
+
+struct member_access_data {
+	struct node *base;
+	struct node *field;
+	int is_arrow;
+};
+
+struct array_subscript_data {
+	struct node *base;
+	struct node *index;
+};
+
+struct enum_decl_data {
+	struct node *name;
+	struct node **enumerators;
+	unsigned long count;
+};
+
+struct enumerator_data {
+	struct node *name;
+	struct node *value;
+};
+
+struct pointer_type_data {
+	struct node *pointee;
+};
+
+struct array_type_data {
+	struct node *element_type;
+	unsigned long size;
 };
 
 struct statx_timestamp {
@@ -576,12 +722,7 @@ void panic(char *msg) {
 	exit_group(-1);
 }
 
-void puts(int fd, char *msg) { pwrite(fd, msg, strlen(msg), 0); }
-void putc(int fd, char ch) {
-	char buf[1];
-	buf[0] = ch;
-	pwrite(fd, buf, 1, 0);
-}
+int fdputs(int fd, char *msg) { return pwrite(fd, msg, strlen(msg), 0); }
 
 int write_num(int fd, unsigned long num) {
 	char buf[21];
@@ -1110,21 +1251,21 @@ int main(int argc, char **argv, char **envp) {
 	l.len = st.stx_size;
 	l.line_num = l.col_start = l.off = 0;
 
-	puts(2, "output file: ");
+	fdputs(2, "output file: ");
 	pwrite(2, l.in, st.stx_size, 0);
 
 begin:
 	t = lexer_next_token(&l, &start);
 	if (t == Term) goto end;
-	puts(2, "start=");
+	fdputs(2, "start=");
 	write_num(2, start);
-	puts(2, ",type=");
+	fdputs(2, ",type=");
 	write_num(2, t);
-	puts(2, ",lineno=");
+	fdputs(2, ",lineno=");
 	write_num(2, l.line_num + 1);
-	puts(2, ",col=");
+	fdputs(2, ",col=");
 	write_num(2, start - l.col_start);
-	puts(2, "\n");
+	fdputs(2, "\n");
 	goto begin;
 end:
 
